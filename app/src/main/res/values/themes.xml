@@ -1,0 +1,6 @@
+<resources>
+    <!-- Compose draws everything; the window only needs to start black. -->
+    <style name="Theme.Clapet" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+</resources>

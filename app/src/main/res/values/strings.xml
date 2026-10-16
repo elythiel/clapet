@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name" translatable="false">Clapet</string>
+    <string name="home_placeholder">Nothing here yet</string>
+</resources>
