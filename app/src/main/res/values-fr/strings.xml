@@ -106,9 +106,4 @@
     <string name="app_move_up">Monter</string>
     <string name="app_move_down">Descendre</string>
     <string name="alphabet_index">Index alphabétique</string>
-    <plurals name="letter_header">
-        <item quantity="one">%1$s · %2$d application</item>
-        <item quantity="many">%1$s · %2$d d’applications</item>
-        <item quantity="other">%1$s · %2$d applications</item>
-    </plurals>
 </resources>

@@ -1,6 +1,7 @@
 package xyz.martelle.clapet.home
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -105,8 +106,14 @@ private const val ListMinDimPercent = 60
 /** Short on purpose: the list must feel as immediate as the thumb that opens it, yet visibly fade. */
 private const val ListFadeMillis = 150
 
-/** Room above the first section and below the last, so neither ends against the screen edge. */
-private val ListTopGap = 24.dp
+/** At release, the sections around the one under the thumb fade in this fast. */
+private const val RevealMillis = 200
+
+/**
+ * Room above the first section and below the last. The top one also places the section the index
+ * jumps to: with the gap above its letter, the letter lands about where the favorites start.
+ */
+private val ListTopGap = 112.dp - SectionGap
 private val ListBottomGap = 160.dp
 
 /** Fixed header height, as in Niagara (not adjustable here): favorites start 162 dp from the top. */
@@ -133,8 +140,11 @@ fun HomeScreen(
     var menuOpen by remember { mutableStateOf(false) }
     val openMenuLabel = stringResource(R.string.home_menu_open)
 
-    // False shows the favorites; true the full list, opened by sliding on the index.
+    // False shows the favorites; true the list, opened by sliding on the index.
     var listOpen by remember { mutableStateOf(false) }
+    // As in Niagara: while the thumb slides, only its section shows; the rest fades in at release.
+    var listRevealed by remember { mutableStateOf(false) }
+    var focusedSection by remember { mutableStateOf<Char?>(null) }
     // Back to the favorites whenever the home leaves the screen (an app opened, the phone unfolded).
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { listOpen = false }
     NavigationBackHandler(
@@ -156,9 +166,13 @@ fun HomeScreen(
     }
     // The index the thumb used: only that one shows while the list is open; the other side's room goes to the list.
     var activeSide by remember { mutableStateOf(StripSide.Start) }
-    val jumpTo: (Char) -> Unit = { letter ->
+    // Scrolls the list itself, hidden or not: the section is then drawn where the full list holds
+    // it (lower near the end, where the list cannot scroll further), and nothing moves at release.
+    val jumpTo: (Char, Boolean) -> Unit = { letter, reveal ->
         listOpen = true
+        listRevealed = reveal
         AlphabetIndex.sectionFor(letter, lettersWithApps)?.let { target ->
+            focusedSection = target
             // Applied at the list's next layout, so it opens straight on the section (no frame on "A").
             listState.requestScrollToItem(headers.getValue(target))
         }
@@ -170,7 +184,7 @@ fun HomeScreen(
     val onScrubLetter by rememberUpdatedState { side: StripSide, letter: Char ->
         activeSide = side
         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        jumpTo(letter)
+        jumpTo(letter, false)
     }
     var rootSize by remember { mutableStateOf(IntSize.Zero) }
     val onHome by rememberUpdatedState(!listOpen)
@@ -186,6 +200,13 @@ fun HomeScreen(
     // sits on a blurred, darker wallpaper, like every screen but the home itself). Kept as a State
     // and read at draw time only, so the animation never recomposes the screen.
     val listProgress = animateFloatAsState(if (listOpen) 1f else 0f, tween(ListFadeMillis), label = "listProgress")
+    // How much of the sections other than the focused one shows: they vanish at once when a slide
+    // starts, and fade in at release.
+    val revealProgress = animateFloatAsState(
+        if (listRevealed) 1f else 0f,
+        if (listRevealed) tween(RevealMillis) else snap(),
+        label = "revealProgress",
+    )
 
     val density = LocalDensity.current
     val insets = if (geometry != null) WindowInsets.coverStatusBar else WindowInsets.safeDrawing
@@ -210,6 +231,7 @@ fun HomeScreen(
                 stripBottom = stripBottom,
                 isEnabled = { canScrub(it) },
                 onLetter = { side, letter -> onScrubLetter(side, letter) },
+                onEnd = { listRevealed = true },
             ),
     ) {
         // Taps and long presses on empty areas: the background only receives touches no row takes.
@@ -268,6 +290,8 @@ fun HomeScreen(
                 favoriteKeys = favoriteKeys,
                 actions = rowActions,
                 contentPadding = PaddingValues(top = ListTopGap, bottom = ListBottomGap),
+                focusedSection = { focusedSection },
+                othersAlpha = { revealProgress.value },
                 // Aligned with the favorites: the wave, drawn from the screen edge, stops short of the icons.
                 modifier = Modifier
                     .fadeLayer { listProgress.value }
@@ -286,7 +310,7 @@ fun HomeScreen(
                     lettersWithApps = lettersWithApps,
                     onSelect = { letter ->
                         activeSide = side
-                        jumpTo(letter)
+                        jumpTo(letter, true)
                     },
                     revealed = listOpen && activeSide == side,
                     enabled = !listOpen || activeSide == side,

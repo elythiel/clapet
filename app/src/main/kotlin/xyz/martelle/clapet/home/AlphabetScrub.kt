@@ -74,6 +74,8 @@ fun Modifier.alphabetScrub(
     stripBottom: Float,
     isEnabled: (StripSide) -> Boolean,
     onLetter: (StripSide, Char) -> Unit,
+    /** The thumb lifted, after at least one [onLetter]. */
+    onEnd: () -> Unit,
 ): Modifier = pointerInput(left, right, stripTop, stripBottom) {
     awaitEachGesture {
         val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
@@ -110,5 +112,6 @@ fun Modifier.alphabetScrub(
             if (!change.pressed) break
         }
         state.end()
+        onEnd()
     }
 }

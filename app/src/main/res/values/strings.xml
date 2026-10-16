@@ -118,9 +118,4 @@
     <string name="app_move_up">Move up</string>
     <string name="app_move_down">Move down</string>
     <string name="alphabet_index">Alphabetical index</string>
-    <!-- Letter, then number of apps under it. -->
-    <plurals name="letter_header">
-        <item quantity="one">%1$s · %2$d app</item>
-        <item quantity="other">%1$s · %2$d apps</item>
-    </plurals>
 </resources>

@@ -35,13 +35,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -213,7 +213,8 @@ fun headerIndexes(sections: List<AppSection>): Map<Char, Int> {
 
 /**
  * The full list, shown while and after sliding on the index: the index jumps to a section,
- * and from there the list scrolls freely to fix a near miss.
+ * and from there the list scrolls freely to fix a near miss. While the thumb slides, only the
+ * section under it is drawn, right where the list holds it, so the others can fade in around it.
  */
 @Composable
 fun AllApps(
@@ -223,31 +224,21 @@ fun AllApps(
     actions: AppActions,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
+    /** The section that stays fully drawn while the others take [othersAlpha]; null for none. */
+    focusedSection: () -> Char? = { null },
+    othersAlpha: () -> Float = { 1f },
 ) {
     var menuFor by remember { mutableStateOf<String?>(null) }
     LazyColumn(state = listState, contentPadding = contentPadding, modifier = modifier) {
         sections.forEach { section ->
-            item(key = "header:${section.letter}") {
-                Text(
-                    pluralStringResource(R.plurals.letter_header, section.apps.size, section.letter.toString(), section.apps.size),
-                    color = LocalClapetColors.current.accent,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    // A clear gap above each letter separates the sections.
-                    modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 24.dp, bottom = 6.dp),
-                )
+            // Read at draw time: switching sections or fading the others never recomposes the rows.
+            val sectionAlpha = Modifier.graphicsLayer {
+                alpha = if (focusedSection() == section.letter) 1f else othersAlpha()
             }
+            item(key = "header:${section.letter}") { SectionHeader(section, sectionAlpha) }
             items(section.apps, key = { it.key }) { app ->
-                Box {
-                    AppRow(
-                        app = app,
-                        iconSize = 24.dp,
-                        labelSize = 17.sp,
-                        onClick = { actions.onLaunch(app) },
-                        onLongClick = { menuFor = app.key },
-                        // Tighter than the favorites, to show more of the list; still a comfortable target.
-                        modifier = Modifier.heightIn(min = 40.dp),
-                    )
+                Box(sectionAlpha) {
+                    ListAppRow(app, onClick = { actions.onLaunch(app) }, onLongClick = { menuFor = app.key })
                     val isFavorite = app.key in favoriteKeys
                     AppMenu(
                         expanded = menuFor == app.key,
@@ -261,6 +252,35 @@ fun AllApps(
             }
         }
     }
+}
+
+/** Space above each letter of the list, separating the sections. */
+val SectionGap = 24.dp
+
+@Composable
+private fun SectionHeader(section: AppSection, modifier: Modifier = Modifier) {
+    Text(
+        // The letter alone, as in Niagara.
+        section.letter.toString(),
+        color = LocalClapetColors.current.accent,
+        fontSize = 16.sp,
+        fontWeight = FontWeight.Bold,
+        // A clear gap above each letter separates the sections.
+        modifier = modifier.padding(start = 8.dp, end = 8.dp, top = SectionGap, bottom = 6.dp),
+    )
+}
+
+@Composable
+private fun ListAppRow(app: AppEntry, onClick: () -> Unit, onLongClick: () -> Unit) {
+    AppRow(
+        app = app,
+        iconSize = 24.dp,
+        labelSize = 17.sp,
+        onClick = onClick,
+        onLongClick = onLongClick,
+        // Tighter than the favorites, to show more of the list; still a comfortable target.
+        modifier = Modifier.heightIn(min = 40.dp),
+    )
 }
 
 @OptIn(ExperimentalFoundationApi::class)
