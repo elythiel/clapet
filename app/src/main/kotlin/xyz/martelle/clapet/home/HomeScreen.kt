@@ -1,10 +1,7 @@
 package xyz.martelle.clapet.home
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateIntAsState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -12,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -29,6 +27,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,13 +36,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -52,7 +57,6 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import java.io.File
 import kotlin.math.roundToInt
-import kotlinx.coroutines.launch
 import xyz.martelle.clapet.R
 import xyz.martelle.clapet.apps.AlphabetIndex
 import xyz.martelle.clapet.apps.AppEntry
@@ -82,9 +86,28 @@ private val ContentEnd = StripWidth + 4.dp
 /** List start when its left index is not in use: just past HyperOS's edge gesture band. */
 private val ListEdge = 12.dp
 
+/**
+ * Scrub zones overlap the content: only a quick vertical drag starts a scrub, so taps and long
+ * presses there still reach the rows. On the home the whole width listens (each half picks its
+ * side); once the list is open, only this much of the side in use, so the rest of the list scrolls.
+ */
+private val ScrubZone = 72.dp
+private val ScrubThreshold = 16.dp
+
+/** Vertical bounds of the letters inside the content area. */
+private val StripTopPadding = 8.dp
+private val StripBottomPadding = 12.dp
+
 /** Same treatment as the settings: readable text on any wallpaper. */
 private val ListBlur = 22.dp
 private const val ListMinDimPercent = 60
+
+/** Short on purpose: the list must feel as immediate as the thumb that opens it, yet visibly fade. */
+private const val ListFadeMillis = 150
+
+/** Room above the first section and below the last, so neither ends against the screen edge. */
+private val ListTopGap = 24.dp
+private val ListBottomGap = 160.dp
 
 /** Fixed header height, as in Niagara (not adjustable here): favorites start 162 dp from the top. */
 private val HeaderHeight = 127.dp
@@ -136,9 +159,21 @@ fun HomeScreen(
     val jumpTo: (Char) -> Unit = { letter ->
         listOpen = true
         AlphabetIndex.sectionFor(letter, lettersWithApps)?.let { target ->
-            scope.launch { listState.scrollToItem(headers.getValue(target)) }
+            // Applied at the list's next layout, so it opens straight on the section (no frame on "A").
+            listState.requestScrollToItem(headers.getValue(target))
         }
     }
+    val scrub = remember(scope) { AlphabetScrubState(scope) }
+    val haptic = LocalHapticFeedback.current
+    // Read through updated state: the scrub detector lives across recompositions.
+    val canScrub by rememberUpdatedState { side: StripSide -> !listOpen || activeSide == side }
+    val onScrubLetter by rememberUpdatedState { side: StripSide, letter: Char ->
+        activeSide = side
+        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        jumpTo(letter)
+    }
+    var rootSize by remember { mutableStateOf(IntSize.Zero) }
+    val onHome by rememberUpdatedState(!listOpen)
     val launch: (AppEntry) -> Unit = { app ->
         listOpen = false
         actions.onLaunch(app)
@@ -147,20 +182,43 @@ fun HomeScreen(
         AppActions(launch, actions.onAppInfo, actions.onAddFavorite, actions.onRemoveFavorite, actions.onMoveFavorite)
     }
 
-    // The letter list sits on a blurred, darker wallpaper, like every screen but the home itself.
-    val listShown = listOpen
-    val blur by animateDpAsState(if (listShown) ListBlur else 0.dp, label = "wallpaperBlur")
-    val dim by animateIntAsState(
-        if (listShown) maxOf(wallpaper.dimPercent, ListMinDimPercent) else wallpaper.dimPercent,
-        label = "wallpaperDim",
-    )
+    // 0 on the home, 1 with the list open: drives the crossfade and the wallpaper veil (the list
+    // sits on a blurred, darker wallpaper, like every screen but the home itself). Kept as a State
+    // and read at draw time only, so the animation never recomposes the screen.
+    val listProgress = animateFloatAsState(if (listOpen) 1f else 0f, tween(ListFadeMillis), label = "listProgress")
 
-    Box(modifier.fillMaxSize()) {
+    val density = LocalDensity.current
+    val insets = if (geometry != null) WindowInsets.coverStatusBar else WindowInsets.safeDrawing
+    val areaLeft = if (geometry != null) 0f else insets.getLeft(density, LayoutDirection.Ltr).toFloat()
+    val areaRight = geometry?.cameras?.left?.toFloat()
+        ?: (rootSize.width - insets.getRight(density, LayoutDirection.Ltr)).toFloat()
+    val scrubZonePx = with(density) { ScrubZone.toPx() }
+    val stripTop = insets.getTop(density) + with(density) { StripTopPadding.toPx() }
+    val stripBottom = rootSize.height - insets.getBottom(density) - with(density) { StripBottomPadding.toPx() }
+
+    Box(
+        modifier
+            .fillMaxSize()
+            .onSizeChanged { rootSize = it }
+            .alphabetScrub(
+                state = scrub,
+                left = areaLeft,
+                right = areaRight,
+                zoneWidth = { if (onHome) (areaRight - areaLeft) / 2f else scrubZonePx },
+                threshold = with(density) { ScrubThreshold.toPx() },
+                stripTop = stripTop,
+                stripBottom = stripBottom,
+                isEnabled = { canScrub(it) },
+                onLetter = { side, letter -> onScrubLetter(side, letter) },
+            ),
+    ) {
         // Taps and long presses on empty areas: the background only receives touches no row takes.
         Wallpaper(
-            settings = wallpaper.copy(dimPercent = dim),
+            settings = wallpaper,
             file = wallpaperFile,
-            blurRadius = blur,
+            blurRadius = ListBlur,
+            minDimPercent = ListMinDimPercent,
+            veil = { listProgress.value },
             modifier = Modifier
                 .fillMaxSize()
                 // A swipe on the background, however long, is not a long press.
@@ -180,7 +238,6 @@ fun HomeScreen(
                 },
         )
 
-        val density = LocalDensity.current
         // On the cover screen everything stays left of the cameras; elsewhere, the safe area.
         val area = if (geometry != null) {
             Modifier
@@ -193,46 +250,52 @@ fun HomeScreen(
                 .windowInsetsPadding(WindowInsets.safeDrawing)
         }
         Box(area) {
-            AnimatedVisibility(visible = !listOpen, enter = fadeIn(), exit = fadeOut()) {
-                Column(Modifier.padding(start = ContentStart - 8.dp, end = ContentEnd)) {
-                    // Milestone 6 fills the header (date, alarm, upcoming events).
-                    Spacer(Modifier.height(HeaderHeight))
-                    FavoritesList(favorites, rowActions)
-                }
+            // No letters show on the home: the favorites take the whole width, from HyperOS's edge band.
+            Column(
+                Modifier
+                    .fadeLayer { 1f - listProgress.value }
+                    .padding(start = ListEdge),
+            ) {
+                // Milestone 6 fills the header (date, alarm, upcoming events).
+                Spacer(Modifier.height(HeaderHeight))
+                FavoritesList(favorites, rowActions)
             }
-            AnimatedVisibility(visible = listOpen, enter = fadeIn(), exit = fadeOut()) {
-                AllApps(
-                    sections = sections,
-                    listState = listState,
-                    favoriteKeys = favoriteKeys,
-                    actions = rowActions,
-                    // Aligned with the favorites: the wave, drawn from the screen edge, stops short of the icons.
-                    modifier = Modifier.padding(
+            // Always composed, even on the home: opening it then costs no first composition, and
+            // the thumb sees it fade in on the very next frame.
+            AllApps(
+                sections = sections,
+                listState = listState,
+                favoriteKeys = favoriteKeys,
+                actions = rowActions,
+                contentPadding = PaddingValues(top = ListTopGap, bottom = ListBottomGap),
+                // Aligned with the favorites: the wave, drawn from the screen edge, stops short of the icons.
+                modifier = Modifier
+                    .fadeLayer { listProgress.value }
+                    .padding(
                         start = if (activeSide == StripSide.Start) ContentStart - 8.dp else ListEdge,
                         end = if (activeSide == StripSide.End) ContentEnd else 0.dp,
-                        top = 8.dp,
                     ),
-                )
-            }
+            )
             // Two indexes, one per edge, invisible on the home so either thumb can start. Once the
             // list is open, only the one in use shows and listens; the other leaves its room to the list.
             StripSide.entries.forEach { side ->
                 AlphabetStrip(
+                    side = side,
+                    scrub = scrub,
                     selected = if (listOpen) visibleLetter else null,
                     lettersWithApps = lettersWithApps,
                     onSelect = { letter ->
                         activeSide = side
                         jumpTo(letter)
                     },
-                    side = side,
                     revealed = listOpen && activeSide == side,
                     enabled = !listOpen || activeSide == side,
                     modifier = Modifier
                         .align(if (side == StripSide.Start) Alignment.TopStart else Alignment.TopEnd)
                         .padding(
                             start = if (side == StripSide.Start) StripStart else 0.dp,
-                            top = 8.dp,
-                            bottom = 12.dp,
+                            top = StripTopPadding,
+                            bottom = StripBottomPadding,
                         )
                         .width(StripWidth)
                         .fillMaxHeight(),
@@ -242,9 +305,7 @@ fun HomeScreen(
                 HealthDot(
                     healthAlert,
                     onClick = { onHealthAlertClick(healthAlert) },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(end = ContentEnd),
+                    modifier = Modifier.align(Alignment.TopEnd),
                 )
             }
         }
@@ -259,6 +320,17 @@ fun HomeScreen(
                 onOpenSettings()
             },
         )
+    }
+}
+
+/**
+ * Measured (so composed) at all times, but placed only while [alpha] is above 0: fully faded out,
+ * the content draws nothing and neither touches nor TalkBack reach it.
+ */
+private fun Modifier.fadeLayer(alpha: () -> Float): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    layout(placeable.width, placeable.height) {
+        if (alpha() > 0f) placeable.placeRelativeWithLayer(0, 0) { this.alpha = alpha() }
     }
 }
 

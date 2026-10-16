@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -221,9 +222,10 @@ fun AllApps(
     favoriteKeys: List<String>,
     actions: AppActions,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
 ) {
     var menuFor by remember { mutableStateOf<String?>(null) }
-    LazyColumn(state = listState, modifier = modifier) {
+    LazyColumn(state = listState, contentPadding = contentPadding, modifier = modifier) {
         sections.forEach { section ->
             item(key = "header:${section.letter}") {
                 Text(

@@ -89,9 +89,10 @@ fun SettingsScreen(
 
     Box(modifier.fillMaxSize()) {
         Wallpaper(
-            settings = wallpaper.copy(dimPercent = maxOf(wallpaper.dimPercent, SettingsMinDimPercent)),
+            settings = wallpaper,
             file = wallpaperFile,
             blurRadius = SettingsBlur,
+            minDimPercent = SettingsMinDimPercent,
             modifier = Modifier.fillMaxSize(),
         )
         Column(modifier = Modifier.contentArea(geometry)) {
