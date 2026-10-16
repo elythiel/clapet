@@ -63,10 +63,12 @@ class CoverHomeService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (event.packageName != FLIP_HOME_PACKAGE) return
         when (event.eventType) {
-            // FlipLauncher also reports its floating windows (the widget square, a FrameLayout)
-            // when another app opens: only its activity means home or recents.
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ->
-                if (event.className == FLIP_HOME_ACTIVITY) scheduleDecision()
+            // Any of FlipLauncher's windows. Its widget square (a FrameLayout) reports right
+            // after a home swipe, ~500 ms before its activity does at the end of HyperOS's
+            // animation: starting from it brings Clapet back that much sooner. It also reports
+            // when another app opens; FlipLauncher's window then never gets focus, and the
+            // retries stand down.
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> scheduleDecision()
             // Closing the recents (tap outside a card) changes content only.
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED ->
                 if (watchingRecents) scheduleDecision()

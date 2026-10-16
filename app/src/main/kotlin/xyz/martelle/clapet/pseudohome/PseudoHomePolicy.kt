@@ -35,7 +35,12 @@ object PseudoHomePolicy {
     /** Minimal time between two relaunches, a guard against any loop. */
     const val RELAUNCH_COOLDOWN_MS = 800L
     const val RETRY_DELAY_MS = 40L
-    const val MAX_ATTEMPTS = 5
+
+    /**
+     * About 600 ms of retries: after a home swipe, FlipLauncher's window only gets focus at the
+     * end of HyperOS's animation, ~460 ms after the finger lifts.
+     */
+    const val MAX_ATTEMPTS = 15
 
     fun decide(state: FlipLauncherState, attempt: Int, sinceLastLaunchMs: Long): Decision {
         val visible = state.found && state.active
