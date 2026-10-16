@@ -42,6 +42,7 @@ val HealthItem.label: Int
         HealthItem.Battery -> R.string.health_battery
         HealthItem.RecentsLock -> R.string.health_recents_lock
         HealthItem.Calendar -> R.string.health_calendar
+        HealthItem.Notifications -> R.string.health_notifications
     }
 
 @get:StringRes
@@ -53,6 +54,7 @@ private val HealthItem.hint: Int
         HealthItem.Battery -> R.string.health_battery_hint
         HealthItem.RecentsLock -> R.string.health_recents_lock_hint
         HealthItem.Calendar -> R.string.health_calendar_hint
+        HealthItem.Notifications -> R.string.health_notifications_hint
     }
 
 @Composable
@@ -147,7 +149,9 @@ private fun HealthRow(item: HealthItem, ok: Boolean, onFix: () -> Unit, onOpenAp
                 Text(stringResource(item.hint))
                 // The recents lock has no screen to open: its hint is the instruction.
                 if (!ok && item != HealthItem.RecentsLock) {
-                    if (item == HealthItem.CoverHome) {
+                    // Both are « restricted settings » for an app installed outside a store.
+                    val restricted = item == HealthItem.CoverHome || item == HealthItem.Notifications
+                    if (restricted) {
                         Text(
                             stringResource(R.string.health_cover_home_restricted),
                             style = MaterialTheme.typography.bodySmall,
@@ -155,7 +159,7 @@ private fun HealthRow(item: HealthItem, ok: Boolean, onFix: () -> Unit, onOpenAp
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = onFix) { Text(stringResource(R.string.health_fix)) }
-                        if (item == HealthItem.CoverHome) {
+                        if (restricted) {
                             TextButton(onClick = onOpenAppInfo) { Text(stringResource(R.string.health_app_info)) }
                         }
                     }

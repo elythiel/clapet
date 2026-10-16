@@ -1,10 +1,12 @@
 package xyz.martelle.clapet.home
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,13 +17,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,7 +42,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -55,12 +55,15 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import xyz.martelle.clapet.R
 import xyz.martelle.clapet.apps.AlphabetIndex
 import xyz.martelle.clapet.apps.AppEntry
-import xyz.martelle.clapet.apps.Favorites
+import xyz.martelle.clapet.notifications.AppNotification
+import xyz.martelle.clapet.notifications.AppNotifications
+import xyz.martelle.clapet.notifications.NotificationRules
 import xyz.martelle.clapet.theme.LocalClapetColors
 import xyz.martelle.clapet.theme.TextPrimary
 
@@ -74,17 +77,21 @@ class AppActions(
     val onAddFavorite: (AppEntry) -> Unit,
     val onRemoveFavorite: (AppEntry) -> Unit,
     val onMoveFavorite: (from: Int, to: Int) -> Unit,
+    /** Opens the app's panel: its actions and notifications (long press, or swipe right when it has some). */
+    val onOpenPanel: (AppEntry) -> Unit = {},
 )
 
 /**
  * The favorites, top to bottom. A long press then a drag moves a favorite (the others make
- * room as it passes); a long press released in place opens its menu instead.
+ * room as it passes); a long press released in place opens its panel instead.
  */
 @Composable
 fun FavoritesList(
     favorites: List<AppEntry>,
     actions: AppActions,
     modifier: Modifier = Modifier,
+    /** By package name; empty without notification access. */
+    notifications: Map<String, AppNotifications> = emptyMap(),
 ) {
     if (favorites.isEmpty()) {
         Text(
@@ -102,7 +109,6 @@ fun FavoritesList(
     var dragOffset by remember { mutableFloatStateOf(0f) }
     // Where the finger went down, in the dragged row's unshifted coordinates.
     var dragStartY by remember { mutableFloatStateOf(0f) }
-    var menuFor by remember { mutableStateOf<String?>(null) }
     val currentFavorites by rememberUpdatedState(favorites)
     val moveUp = stringResource(R.string.app_move_up)
     val moveDown = stringResource(R.string.app_move_down)
@@ -129,7 +135,7 @@ fun FavoritesList(
                     }
                     .semantics {
                         onLongClick {
-                            menuFor = app.key
+                            actions.onOpenPanel(app)
                             true
                         }
                         customActions = listOfNotNull(
@@ -144,12 +150,15 @@ fun FavoritesList(
                         )
                     },
             ) {
+                val appNotifications = notifications[app.component.packageName]
                 AppRow(
                     app = app,
                     iconSize = 26.dp,
                     labelSize = 19.sp,
                     onClick = { actions.onLaunch(app) },
                     onLongClick = null,
+                    notifications = appNotifications,
+                    onSwipe = { actions.onOpenPanel(app) },
                     // Inside the click handler: it sees, and consumes, the release of a drag first.
                     gestures = Modifier.pointerInput(app.key) {
                         detectDragGesturesAfterLongPress(
@@ -168,7 +177,7 @@ fun FavoritesList(
                             onDragEnd = {
                                 val from = dragging
                                 if (from != null) {
-                                    if (abs(dragOffset) < touchSlop) menuFor = app.key else actions.onMoveFavorite(from, targetOf(from))
+                                    if (abs(dragOffset) < touchSlop) actions.onOpenPanel(app) else actions.onMoveFavorite(from, targetOf(from))
                                 }
                                 dragging = null
                                 dragOffset = 0f
@@ -180,14 +189,6 @@ fun FavoritesList(
                         )
                     },
                     modifier = Modifier.heightIn(min = FavoriteRowHeight),
-                )
-                AppMenu(
-                    expanded = menuFor == app.key,
-                    isFavorite = true,
-                    favoritesFull = true,
-                    onDismiss = { menuFor = null },
-                    onFavoriteToggle = { actions.onRemoveFavorite(app) },
-                    onAppInfo = { actions.onAppInfo(app) },
                 )
             }
         }
@@ -220,15 +221,14 @@ fun headerIndexes(sections: List<AppSection>): Map<Char, Int> {
 fun AllApps(
     sections: List<AppSection>,
     listState: LazyListState,
-    favoriteKeys: List<String>,
     actions: AppActions,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     /** The section that stays fully drawn while the others take [othersAlpha]; null for none. */
     focusedSection: () -> Char? = { null },
     othersAlpha: () -> Float = { 1f },
+    notifications: Map<String, AppNotifications> = emptyMap(),
 ) {
-    var menuFor by remember { mutableStateOf<String?>(null) }
     LazyColumn(state = listState, contentPadding = contentPadding, modifier = modifier) {
         sections.forEach { section ->
             // Read at draw time: switching sections or fading the others never recomposes the rows.
@@ -237,18 +237,17 @@ fun AllApps(
             }
             item(key = "header:${section.letter}") { SectionHeader(section, sectionAlpha) }
             items(section.apps, key = { it.key }) { app ->
-                Box(sectionAlpha) {
-                    ListAppRow(app, onClick = { actions.onLaunch(app) }, onLongClick = { menuFor = app.key })
-                    val isFavorite = app.key in favoriteKeys
-                    AppMenu(
-                        expanded = menuFor == app.key,
-                        isFavorite = isFavorite,
-                        favoritesFull = favoriteKeys.size >= Favorites.MAX,
-                        onDismiss = { menuFor = null },
-                        onFavoriteToggle = { if (isFavorite) actions.onRemoveFavorite(app) else actions.onAddFavorite(app) },
-                        onAppInfo = { actions.onAppInfo(app) },
-                    )
-                }
+                AppRow(
+                    app = app,
+                    iconSize = 24.dp,
+                    labelSize = 17.sp,
+                    onClick = { actions.onLaunch(app) },
+                    onLongClick = { actions.onOpenPanel(app) },
+                    notifications = notifications[app.component.packageName],
+                    onSwipe = { actions.onOpenPanel(app) },
+                    // Tighter than the favorites, to show more of the list; still a comfortable target.
+                    modifier = sectionAlpha.heightIn(min = 40.dp),
+                )
             }
         }
     }
@@ -270,19 +269,6 @@ private fun SectionHeader(section: AppSection, modifier: Modifier = Modifier) {
     )
 }
 
-@Composable
-private fun ListAppRow(app: AppEntry, onClick: () -> Unit, onLongClick: () -> Unit) {
-    AppRow(
-        app = app,
-        iconSize = 24.dp,
-        labelSize = 17.sp,
-        onClick = onClick,
-        onLongClick = onLongClick,
-        // Tighter than the favorites, to show more of the list; still a comfortable target.
-        modifier = Modifier.heightIn(min = 40.dp),
-    )
-}
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AppRow(
@@ -293,76 +279,104 @@ private fun AppRow(
     onLongClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     gestures: Modifier = Modifier,
+    notifications: AppNotifications? = null,
+    /** Swiping right, only offered while the app has notifications. */
+    onSwipe: () -> Unit = {},
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    val accent = LocalClapetColors.current.accent
+    val swipe = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+    val currentOnSwipe by rememberUpdatedState(onSwipe)
+    val density = LocalDensity.current
+    val maxSwipePx = with(density) { SwipeMax.toPx() }
+    val thresholdPx = with(density) { SwipeThreshold.toPx() }
+    // The detector stays on the box, which never moves; only the content follows the finger.
+    Box(
+        contentAlignment = Alignment.CenterStart,
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .then(gestures)
+            .then(
+                if (notifications == null) {
+                    Modifier
+                } else {
+                    Modifier.pointerInput(Unit) {
+                        detectHorizontalDragGestures(
+                            onDragEnd = {
+                                if (swipe.value >= thresholdPx) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                                    currentOnSwipe()
+                                }
+                                scope.launch { swipe.animateTo(0f) }
+                            },
+                            onDragCancel = { scope.launch { swipe.animateTo(0f) } },
+                        ) { change, dragAmount ->
+                            change.consume()
+                            scope.launch { swipe.snapTo((swipe.value + dragAmount).coerceIn(0f, maxSwipePx)) }
+                        }
+                    }
+                },
+            )
             .padding(horizontal = 8.dp, vertical = 2.dp),
     ) {
-        Image(bitmap = app.icon, contentDescription = null, modifier = Modifier.size(iconSize))
-        Text(
-            text = app.label,
-            color = TextPrimary,
-            fontSize = labelSize,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-/** Decorative: the item's text already says what it does. */
-@Composable
-private fun MenuIcon(@DrawableRes icon: Int) {
-    Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(20.dp))
-}
-
-@Composable
-private fun AppMenu(
-    expanded: Boolean,
-    isFavorite: Boolean,
-    favoritesFull: Boolean,
-    onDismiss: () -> Unit,
-    onFavoriteToggle: () -> Unit,
-    onAppInfo: () -> Unit,
-) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        when {
-            isFavorite -> DropdownMenuItem(
-                text = { Text(stringResource(R.string.app_menu_remove_favorite)) },
-                leadingIcon = { MenuIcon(R.drawable.ic_star_off) },
-                onClick = {
-                    onDismiss()
-                    onFavoriteToggle()
-                },
-            )
-            favoritesFull -> DropdownMenuItem(
-                text = { Text(stringResource(R.string.favorites_full)) },
-                leadingIcon = { MenuIcon(R.drawable.ic_star) },
-                onClick = {},
-                enabled = false,
-            )
-            else -> DropdownMenuItem(
-                text = { Text(stringResource(R.string.app_menu_add_favorite)) },
-                leadingIcon = { MenuIcon(R.drawable.ic_star) },
-                onClick = {
-                    onDismiss()
-                    onFavoriteToggle()
-                },
-            )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.graphicsLayer { translationX = swipe.value },
+        ) {
+            Image(bitmap = app.icon, contentDescription = null, modifier = Modifier.size(iconSize))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = app.label,
+                    color = TextPrimary,
+                    fontSize = labelSize,
+                    fontWeight = FontWeight.Medium,
+                    lineHeight = 24.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (notifications != null) {
+                    // Fits the favorites' 44 dp row with the name: the drag-to-reorder math relies on it.
+                    Text(
+                        text = notificationPreview(notifications.latest),
+                        color = accent,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            if (notifications != null) CountBadge(notifications.count)
         }
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.app_menu_info)) },
-            leadingIcon = { MenuIcon(R.drawable.ic_info) },
-            onClick = {
-                onDismiss()
-                onAppInfo()
-            },
-        )
     }
+}
+
+/** How far a row follows a swipe right, and how far it must go to unfold its notifications. */
+private val SwipeMax = 72.dp
+private val SwipeThreshold = 40.dp
+
+@Composable
+private fun CountBadge(count: Int) {
+    val colors = LocalClapetColors.current
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .heightIn(min = 18.dp)
+            .widthIn(min = 18.dp)
+            .background(colors.accent, RoundedCornerShape(9.dp))
+            .padding(horizontal = 5.dp),
+    ) {
+        Text(count.toString(), color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold, lineHeight = 14.sp)
+    }
+}
+
+/** « Léa : On se retrouve à 19 h ? », or whichever of the two is known. */
+@Composable
+internal fun notificationPreview(notification: AppNotification): String {
+    val parts = NotificationRules.previewParts(notification)
+    return if (parts.size == 2) stringResource(R.string.notification_preview, parts[0], parts[1]) else parts.firstOrNull().orEmpty()
 }

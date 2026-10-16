@@ -1,10 +1,12 @@
 package xyz.martelle.clapet.health
 
 import android.annotation.SuppressLint
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import androidx.core.net.toUri
+import xyz.martelle.clapet.notifications.ClapetNotificationListener
 
 /**
  * The system screen that fixes [item], or null when Clapet handles it itself (DUMP, the
@@ -17,6 +19,14 @@ fun HealthItem.shortcut(context: Context): Intent? = when (this) {
     HealthItem.AutoStart ->
         Intent("miui.intent.action.OP_AUTO_START").addCategory(Intent.CATEGORY_DEFAULT).orAppInfo(context)
     HealthItem.Battery -> batteryShortcut(context)
+    // Straight to Clapet's switch; the list of all listeners otherwise.
+    HealthItem.Notifications -> Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+        .putExtra(
+            Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,
+            ComponentName(context, ClapetNotificationListener::class.java).flattenToString(),
+        )
+        .takeIf { it.resolveActivity(context.packageManager) != null }
+        ?: Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
 }
 
 /** "Allow restricted settings" lives behind the ⋮ of this screen (apps installed outside a store). */

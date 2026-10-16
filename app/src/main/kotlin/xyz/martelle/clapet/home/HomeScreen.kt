@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -61,10 +62,13 @@ import kotlin.math.roundToInt
 import xyz.martelle.clapet.R
 import xyz.martelle.clapet.apps.AlphabetIndex
 import xyz.martelle.clapet.apps.AppEntry
+import xyz.martelle.clapet.apps.Favorites
 import xyz.martelle.clapet.cover.CoverGeometry
 import xyz.martelle.clapet.cover.coverStatusBar
 import xyz.martelle.clapet.header.HeaderInfo
 import xyz.martelle.clapet.header.UpcomingEvent
+import xyz.martelle.clapet.notifications.AppNotifications
+import xyz.martelle.clapet.notifications.NowPlaying
 import xyz.martelle.clapet.health.HealthItem
 import xyz.martelle.clapet.settings.WallpaperSettings
 import xyz.martelle.clapet.settings.label
@@ -118,6 +122,9 @@ private const val RevealMillis = 200
 private val ListTopGap = 112.dp - SectionGap
 private val ListBottomGap = 160.dp
 
+/** Margin around the player, inside the square above the cameras. */
+private val PlayerGap = 4.dp
+
 /** Fixed header height, as in Niagara (not adjustable here): favorites start 162 dp from the top. */
 private val HeaderHeight = 127.dp
 
@@ -134,6 +141,12 @@ fun HomeScreen(
     /** Null until first read. */
     header: HeaderInfo?,
     onOpenEvent: (UpcomingEvent) -> Unit,
+    /** By package name; empty without notification access. */
+    notifications: Map<String, AppNotifications>,
+    notificationActions: NotificationActions,
+    /** Null when nothing plays or is paused (or without notification access). */
+    nowPlaying: NowPlaying?,
+    mediaActions: MediaActions,
     /** First required setting that is off, if any: shown as a small accent dot. */
     healthAlert: HealthItem?,
     onHealthAlertClick: (HealthItem) -> Unit,
@@ -150,12 +163,23 @@ fun HomeScreen(
     // As in Niagara: while the thumb slides, only its section shows; the rest fades in at release.
     var listRevealed by remember { mutableStateOf(false) }
     var focusedSection by remember { mutableStateOf<Char?>(null) }
+    // The app whose panel is open (its actions and notifications), by package name.
+    var unfolded by remember { mutableStateOf<String?>(null) }
+    val unfoldedApp = unfolded?.let { pkg -> apps.firstOrNull { it.component.packageName == pkg } }
+    // An app removed while its panel is open closes it.
+    LaunchedEffect(unfolded, unfoldedApp == null) {
+        if (unfolded != null && unfoldedApp == null) unfolded = null
+    }
     // Back to the favorites whenever the home leaves the screen (an app opened, the phone unfolded).
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { listOpen = false }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        listOpen = false
+        unfolded = null
+    }
     NavigationBackHandler(
         state = rememberNavigationEventState(currentInfo = NavigationEventInfo.None),
-        isBackEnabled = listOpen,
-        onBackCompleted = { listOpen = false },
+        isBackEnabled = listOpen || unfolded != null,
+        // The open panel first, then the list.
+        onBackCompleted = { if (unfolded != null) unfolded = null else listOpen = false },
     )
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -185,7 +209,8 @@ fun HomeScreen(
     val scrub = remember(scope) { AlphabetScrubState(scope) }
     val haptic = LocalHapticFeedback.current
     // Read through updated state: the scrub detector lives across recompositions.
-    val canScrub by rememberUpdatedState { side: StripSide -> !listOpen || activeSide == side }
+    // Not over an open panel: its cards scroll vertically, right where the index listens.
+    val canScrub by rememberUpdatedState { side: StripSide -> unfolded == null && (!listOpen || activeSide == side) }
     val onScrubLetter by rememberUpdatedState { side: StripSide, letter: Char ->
         activeSide = side
         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -198,7 +223,14 @@ fun HomeScreen(
         actions.onLaunch(app)
     }
     val rowActions = remember(actions) {
-        AppActions(launch, actions.onAppInfo, actions.onAddFavorite, actions.onRemoveFavorite, actions.onMoveFavorite)
+        AppActions(
+            launch,
+            actions.onAppInfo,
+            actions.onAddFavorite,
+            actions.onRemoveFavorite,
+            actions.onMoveFavorite,
+            onOpenPanel = { app -> unfolded = app.component.packageName },
+        )
     }
 
     // 0 on the home, 1 with the list open: drives the crossfade and the wallpaper veil (the list
@@ -291,18 +323,18 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .height(HeaderHeight),
                 )
-                FavoritesList(favorites, rowActions)
+                FavoritesList(favorites, rowActions, notifications = notifications)
             }
             // Always composed, even on the home: opening it then costs no first composition, and
             // the thumb sees it fade in on the very next frame.
             AllApps(
                 sections = sections,
                 listState = listState,
-                favoriteKeys = favoriteKeys,
                 actions = rowActions,
                 contentPadding = PaddingValues(top = ListTopGap, bottom = ListBottomGap),
                 focusedSection = { focusedSection },
                 othersAlpha = { revealProgress.value },
+                notifications = notifications,
                 // Aligned with the favorites: the wave, drawn from the screen edge, stops short of the icons.
                 modifier = Modifier
                     .fadeLayer { listProgress.value }
@@ -343,6 +375,37 @@ fun HomeScreen(
                     modifier = Modifier.align(Alignment.TopEnd),
                 )
             }
+            if (unfoldedApp != null) {
+                NotificationsPanel(
+                    app = unfoldedApp,
+                    notifications = notifications[unfoldedApp.component.packageName],
+                    actions = notificationActions,
+                    onDismiss = { unfolded = null },
+                    isFavorite = unfoldedApp.key in favoriteKeys,
+                    favoritesFull = favoriteKeys.size >= Favorites.MAX,
+                    onFavoriteToggle = {
+                        if (unfoldedApp.key in favoriteKeys) actions.onRemoveFavorite(unfoldedApp) else actions.onAddFavorite(unfoldedApp)
+                    },
+                    onAppInfo = { actions.onAppInfo(unfoldedApp) },
+                )
+            }
+        }
+
+        // The square above the cameras, between the status bar and the lenses. Hidden under an
+        // open panel, whose backdrop reaches past the cameras' edge.
+        if (geometry != null && nowPlaying != null && unfolded == null) {
+            val gap = with(density) { PlayerGap.roundToPx() }
+            val top = insets.getTop(density) + gap
+            val left = geometry.cameras.left + gap
+            val right = geometry.cameras.right - gap
+            val bottom = geometry.cameras.top - gap
+            NowPlayingCard(
+                nowPlaying = nowPlaying,
+                actions = mediaActions,
+                modifier = Modifier
+                    .offset { IntOffset(left, top) }
+                    .size(with(density) { (right - left).toDp() }, with(density) { (bottom - top).toDp() }),
+            )
         }
 
         HomeMenu(

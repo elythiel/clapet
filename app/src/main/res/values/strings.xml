@@ -108,6 +108,8 @@
     <string name="health_recents_lock_hint">Optional · in recent apps, long-press Clapet, then tap the lock</string>
     <string name="health_calendar">Calendar</string>
     <string name="health_calendar_hint">Upcoming events on the home</string>
+    <string name="health_notifications">Notifications</string>
+    <string name="health_notifications_hint">Previews under the apps and the media player</string>
     <string name="health_xiaomi_home">Empty Xiaomi cover home</string>
     <string name="health_xiaomi_home_hint">For a seamless return, remove the widgets and apps from the Xiaomi cover home and give it a black wallpaper (or Clapet\'s wallpaper). Clapet pauses for 5 minutes meanwhile.</string>
     <string name="health_xiaomi_home_open">Open the Xiaomi home</string>
@@ -123,6 +125,17 @@
     <string name="app_move_up">Move up</string>
     <string name="app_move_down">Move down</string>
     <string name="alphabet_index">Alphabetical index</string>
+    <!-- Sender, then message, of the newest notification under an app. -->
+    <string name="notification_preview">%1$s: %2$s</string>
+    <string name="notification_reply">Reply</string>
+    <string name="notification_clear">Clear</string>
+    <string name="notification_reply_hint">Your reply</string>
+    <string name="notification_send">Send</string>
+    <string name="notifications_close">Close the notifications</string>
+    <string name="media_previous">Previous</string>
+    <string name="media_play">Play</string>
+    <string name="media_pause">Pause</string>
+    <string name="media_next">Next</string>
     <string name="header_upcoming">Upcoming</string>
     <string name="header_today">Today</string>
     <string name="header_tomorrow">Tomorrow</string>

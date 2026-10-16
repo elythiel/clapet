@@ -97,6 +97,8 @@
     <string name="health_recents_lock_hint">Optionnel · dans les apps récentes, appuyez longuement sur Clapet, puis sur le cadenas</string>
     <string name="health_calendar">Agenda</string>
     <string name="health_calendar_hint">Événements à venir sur l’accueil</string>
+    <string name="health_notifications">Notifications</string>
+    <string name="health_notifications_hint">Aperçus sous les apps et lecteur multimédia</string>
     <string name="health_xiaomi_home">Accueil Xiaomi vide</string>
     <string name="health_xiaomi_home_hint">Pour un retour sans à-coup, retirez les widgets et les apps de l’accueil Xiaomi de l’écran externe et mettez-lui un fond noir (ou celui de Clapet). Clapet se met en pause 5 minutes pendant ce temps.</string>
     <string name="health_xiaomi_home_open">Ouvrir l’accueil Xiaomi</string>
@@ -111,6 +113,16 @@
     <string name="app_move_up">Monter</string>
     <string name="app_move_down">Descendre</string>
     <string name="alphabet_index">Index alphabétique</string>
+    <string name="notification_preview">%1$s : %2$s</string>
+    <string name="notification_reply">Répondre</string>
+    <string name="notification_clear">Effacer</string>
+    <string name="notification_reply_hint">Votre réponse</string>
+    <string name="notification_send">Envoyer</string>
+    <string name="notifications_close">Fermer les notifications</string>
+    <string name="media_previous">Précédent</string>
+    <string name="media_play">Lecture</string>
+    <string name="media_pause">Pause</string>
+    <string name="media_next">Suivant</string>
     <string name="header_upcoming">À venir</string>
     <string name="header_today">Aujourd’hui</string>
     <string name="header_tomorrow">Demain</string>

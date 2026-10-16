@@ -32,6 +32,9 @@ enum class HealthItem(val required: Boolean, val group: HealthGroup = HealthGrou
 
     /** READ_CALENDAR, for the upcoming events of the header; without it, date and alarm only. */
     Calendar(required = false, group = HealthGroup.Features),
+
+    /** Notification access: previews under the apps and the cover player (milestone 7). */
+    Notifications(required = false, group = HealthGroup.Features),
 }
 
 @Immutable

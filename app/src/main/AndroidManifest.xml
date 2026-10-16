@@ -65,7 +65,8 @@
             android:launchMode="singleTask"
             android:resizeableActivity="true"
             android:taskAffinity="xyz.martelle.clapet.home"
-            android:theme="@style/Theme.Clapet.Home">
+            android:theme="@style/Theme.Clapet.Home"
+            android:windowSoftInputMode="adjustResize">
             <meta-data
                 android:name="miui.supportFlipFullScreen"
                 android:value="0" />
@@ -100,6 +101,18 @@
             <meta-data
                 android:name="android.accessibilityservice"
                 android:resource="@xml/cover_home_service" />
+        </service>
+
+        <!-- Bound by the system once notification access is granted (BIND_NOTIFICATION_LISTENER_SERVICE):
+             notifications under the apps, and the media sessions for the cover player. -->
+        <service
+            android:name=".notifications.ClapetNotificationListener"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
         </service>
 
         <!-- Protected system broadcasts only: exported, but no app can send them. -->

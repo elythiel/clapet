@@ -35,6 +35,7 @@ import xyz.martelle.clapet.health.HealthReport
 import xyz.martelle.clapet.health.openHealthFix
 import xyz.martelle.clapet.apps.Favorites
 import xyz.martelle.clapet.installedApps
+import xyz.martelle.clapet.notificationHub
 import xyz.martelle.clapet.settingsRepository
 import xyz.martelle.clapet.theme.ClapetTheme
 
@@ -55,6 +56,14 @@ class HomeActivity : ComponentActivity() {
         val healthChecker = HealthChecker(this)
         val appList = installedApps.also { it.start() }
         val headerSource = HeaderSource(this)
+        val hub = notificationHub
+        val notificationActions = NotificationActions(
+            // A notification that points nowhere opens its app instead.
+            onOpen = { app, notification -> if (!hub.open(notification.key, this)) appList.launch(app) },
+            onReply = { notification, text -> hub.reply(notification.key, text) },
+            onClear = { notification -> hub.clear(notification.key) },
+        )
+        val mediaActions = MediaActions(onPrevious = hub::skipPrevious, onPlayPause = hub::playPause, onNext = hub::skipNext)
         val updateFavorites: ((List<String>) -> List<String>) -> Unit = { transform ->
             lifecycleScope.launch { settings.updateFavorites(transform) }
         }
@@ -80,6 +89,8 @@ class HomeActivity : ComponentActivity() {
             val geometry = rememberCoverGeometry()
             // Collected while the home is visible: listeners off when hidden, a fresh read on return.
             val header by remember { headerSource.header() }.collectAsStateWithLifecycle(initialValue = null)
+            val notifications by hub.notifications.collectAsStateWithLifecycle()
+            val nowPlaying by hub.nowPlaying.collectAsStateWithLifecycle()
             // Settings can break outside the app (an HyperOS update, for instance): re-check on every return.
             var health by remember { mutableStateOf<HealthReport?>(null) }
             LifecycleResumeEffect(Unit) {
@@ -112,6 +123,10 @@ class HomeActivity : ComponentActivity() {
                             // No calendar app to show it: the tap does nothing.
                         }
                     },
+                    notifications = notifications,
+                    notificationActions = notificationActions,
+                    nowPlaying = nowPlaying,
+                    mediaActions = mediaActions,
                     healthAlert = health?.firstBroken,
                     onHealthAlertClick = { openHealthFix(it) },
                 )
