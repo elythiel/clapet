@@ -31,7 +31,6 @@ import xyz.martelle.clapet.coverUnlock
 import xyz.martelle.clapet.health.HealthChecker
 import xyz.martelle.clapet.health.HealthReport
 import xyz.martelle.clapet.health.openHealthFix
-import xyz.martelle.clapet.pseudohome.pausePseudoHomeAndStepAside
 import xyz.martelle.clapet.settingsRepository
 import xyz.martelle.clapet.theme.ClapetTheme
 
@@ -58,7 +57,6 @@ class HomeActivity : ComponentActivity() {
 
             val accent by settings.accent.collectAsStateWithLifecycle(initialValue = null)
             val wallpaper by settings.wallpaper.collectAsStateWithLifecycle(initialValue = null)
-            val pseudoHome by settings.pseudoHome.collectAsStateWithLifecycle(initialValue = null)
             val shortcuts by produceState(emptyList<Shortcut>()) {
                 value = withContext(Dispatchers.Default) { loadShortcuts(this@HomeActivity, TemporaryShortcutQueries) }
             }
@@ -85,7 +83,6 @@ class HomeActivity : ComponentActivity() {
                     shortcuts = shortcuts,
                     onShortcutClick = { launch(it) },
                     onOpenSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
-                    onPause = if (pseudoHome?.enabled == true) ::pausePseudoHomeAndStepAside else null,
                     healthAlert = health?.firstBroken,
                     onHealthAlertClick = { openHealthFix(it) },
                 )

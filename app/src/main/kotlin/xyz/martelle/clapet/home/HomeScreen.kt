@@ -67,14 +67,15 @@ fun HomeScreen(
     shortcuts: List<Shortcut>,
     onShortcutClick: (Shortcut) -> Unit,
     onOpenSettings: () -> Unit,
-    /** Null when the pseudo-home is off: there is nothing to pause. */
-    onPause: (() -> Unit)?,
     /** First required setting that is off, if any: shown as a small accent dot. */
     healthAlert: HealthItem?,
     onHealthAlertClick: (HealthItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var menuAt by remember { mutableStateOf<Offset?>(null) }
+    // Position and visibility are separate: closing keeps the position, so the menu fades
+    // out where it was instead of jumping to the corner during its exit animation.
+    var menuPosition by remember { mutableStateOf(Offset.Zero) }
+    var menuOpen by remember { mutableStateOf(false) }
     val openMenuLabel = stringResource(R.string.home_menu_open)
 
     Box(modifier.fillMaxSize()) {
@@ -84,10 +85,16 @@ fun HomeScreen(
             file = wallpaperFile,
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) { detectTapGestures(onLongPress = { menuAt = it }) }
+                .pointerInput(Unit) {
+                    detectTapGestures(onLongPress = {
+                        menuPosition = it
+                        menuOpen = true
+                    })
+                }
                 .semantics {
                     onLongClick(openMenuLabel) {
-                        menuAt = Offset.Zero
+                        menuPosition = Offset.Zero
+                        menuOpen = true
                         true
                     }
                 },
@@ -112,18 +119,13 @@ fun HomeScreen(
         }
 
         HomeMenu(
-            anchor = menuAt,
+            open = menuOpen,
+            position = menuPosition,
             maxAnchorX = geometry?.cameras?.left,
-            onDismiss = { menuAt = null },
+            onDismiss = { menuOpen = false },
             onOpenSettings = {
-                menuAt = null
+                menuOpen = false
                 onOpenSettings()
-            },
-            onPause = onPause?.let { pause ->
-                {
-                    menuAt = null
-                    pause()
-                }
             },
         )
     }
@@ -178,27 +180,21 @@ private fun HealthDot(item: HealthItem, onClick: () -> Unit, modifier: Modifier 
 
 @Composable
 private fun HomeMenu(
-    anchor: Offset?,
+    open: Boolean,
+    position: Offset,
     maxAnchorX: Int?,
     onDismiss: () -> Unit,
     onOpenSettings: () -> Unit,
-    onPause: (() -> Unit)?,
 ) {
     val menuWidthPx = with(LocalDensity.current) { MenuWidth.roundToPx() }
-    val x = anchor?.x?.roundToInt() ?: 0
+    val x = position.x.roundToInt()
     val clampedX = if (maxAnchorX != null) x.coerceIn(0, (maxAnchorX - menuWidthPx).coerceAtLeast(0)) else x
-    Box(Modifier.offset { IntOffset(clampedX, anchor?.y?.roundToInt() ?: 0) }) {
-        DropdownMenu(expanded = anchor != null, onDismissRequest = onDismiss) {
+    Box(Modifier.offset { IntOffset(clampedX, position.y.roundToInt()) }) {
+        DropdownMenu(expanded = open, onDismissRequest = onDismiss) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.menu_settings), style = MaterialTheme.typography.bodyLarge) },
                 onClick = onOpenSettings,
             )
-            if (onPause != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.menu_pause), style = MaterialTheme.typography.bodyLarge) },
-                    onClick = onPause,
-                )
-            }
         }
     }
 }

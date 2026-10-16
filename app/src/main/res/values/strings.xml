@@ -51,7 +51,6 @@
 
     <!-- Pseudo-home -->
     <string name="cover_home_service_description">Shows Clapet instead of the Xiaomi home on the cover screen. Clapet only looks at the Xiaomi cover home (FlipLauncher), to know when its home or its recent apps are on screen.</string>
-    <string name="menu_pause">Pause for 5 minutes</string>
     <string name="settings_pseudo_home">Pseudo-home</string>
     <string name="pseudo_home_on">Clapet replaces the Xiaomi cover home</string>
     <string name="pseudo_home_off">Xiaomi cover home, as shipped</string>

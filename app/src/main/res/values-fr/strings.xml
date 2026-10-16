@@ -43,7 +43,6 @@
 
     <!-- Pseudo-accueil -->
     <string name="cover_home_service_description">Affiche Clapet à la place de l’accueil Xiaomi sur l’écran externe. Clapet ne regarde que l’accueil Xiaomi de l’écran externe (FlipLauncher), pour savoir quand son accueil ou ses apps récentes sont à l’écran.</string>
-    <string name="menu_pause">Suspendre 5 minutes</string>
     <string name="settings_pseudo_home">Pseudo-accueil</string>
     <string name="pseudo_home_on">Clapet remplace l’accueil Xiaomi de l’écran externe</string>
     <string name="pseudo_home_off">Accueil Xiaomi d’origine</string>
