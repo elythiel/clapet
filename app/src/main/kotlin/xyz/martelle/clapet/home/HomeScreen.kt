@@ -175,8 +175,8 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     val sections = remember(apps) { sectionsOf(apps) }
     val headers = remember(sections) { headerIndexes(sections) }
-    // « # » always leads somewhere: Clapet's settings end the list under it.
-    val lettersWithApps = remember(sections) { sections.mapTo(HashSet()) { it.letter } + AlphabetIndex.OTHER }
+    // The gear always leads somewhere: Clapet's settings end the list.
+    val lettersWithApps = remember(sections) { sections.mapTo(HashSet()) { it.letter } + AlphabetIndex.SETTINGS }
     // The section at the top of the list: highlighted in the index, so it follows free scrolling too.
     val visibleLetter by remember(headers) {
         derivedStateOf {

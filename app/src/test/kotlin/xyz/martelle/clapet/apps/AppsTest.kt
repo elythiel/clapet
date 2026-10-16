@@ -21,10 +21,10 @@ class AppsTest {
 
     @Test
     fun `a touch maps to the letter under it, clamped to the strip`() {
-        val height = 270f // 27 letters, 10 px each
-        assertEquals(0, AlphabetIndex.letterIndexAt(0f, height))
-        assertEquals(12, AlphabetIndex.letterIndexAt(125f, height)) // M
-        assertEquals(26, AlphabetIndex.letterIndexAt(400f, height)) // past the end: #
+        val height = 280f // #, 26 letters and the settings gear, 10 px each
+        assertEquals(0, AlphabetIndex.letterIndexAt(0f, height)) // #
+        assertEquals(13, AlphabetIndex.letterIndexAt(135f, height)) // M
+        assertEquals(27, AlphabetIndex.letterIndexAt(400f, height)) // past the end: the gear
         assertEquals(0, AlphabetIndex.letterIndexAt(-20f, height))
     }
 
@@ -33,7 +33,8 @@ class AppsTest {
         val available = setOf('C', 'M', 'T')
         assertEquals('M', AlphabetIndex.sectionFor('M', available))
         assertEquals('M', AlphabetIndex.sectionFor('F', available))
-        assertEquals('T', AlphabetIndex.sectionFor('#', available))
+        assertEquals('C', AlphabetIndex.sectionFor('#', available))
+        assertEquals('T', AlphabetIndex.sectionFor('Z', available))
         assertEquals(null, AlphabetIndex.sectionFor('A', emptySet()))
     }
 

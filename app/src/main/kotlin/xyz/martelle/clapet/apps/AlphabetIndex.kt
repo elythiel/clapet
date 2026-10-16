@@ -2,12 +2,18 @@ package xyz.martelle.clapet.apps
 
 import java.text.Normalizer
 
-/** The letters of the side index, in order: A to Z, then # for everything else. */
+/**
+ * The entries of the side index, in order: # for everything that does not start with a letter
+ * (digits, symbols, other scripts), A to Z, then Clapet's settings, which close the list.
+ */
 object AlphabetIndex {
 
     const val OTHER: Char = '#'
 
-    val letters: List<Char> = ('A'..'Z').toList() + OTHER
+    /** Not a letter: drawn as a gear in the index, it leads to the settings row at the list's end. */
+    const val SETTINGS: Char = '\u2699'
+
+    val letters: List<Char> = listOf(OTHER) + ('A'..'Z') + SETTINGS
 
     /** "Écran" files under E, "Ölfarbe" under O, "7-Zip" or "微信" under #. */
     fun letterOf(label: String): Char {

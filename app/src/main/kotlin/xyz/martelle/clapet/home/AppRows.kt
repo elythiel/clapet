@@ -208,16 +208,15 @@ fun sectionsOf(apps: List<AppEntry>): List<AppSection> {
 }
 
 /**
- * Position of each section header in [AllApps]' list: one header item, then one item per app.
- * « # » is always there: Clapet's settings close the list under it, so with no app filed under
- * « # » it points at the settings item.
+ * Position of each section header in [AllApps]' list: one header item, then one item per app;
+ * the index's gear ([AlphabetIndex.SETTINGS]) points at the settings item that closes the list.
  */
 fun headerIndexes(sections: List<AppSection>): Map<Char, Int> {
     var index = 0
     val headers = sections.associate { section ->
         (section.letter to index).also { index += 1 + section.apps.size }
     }
-    return if (AlphabetIndex.OTHER in headers) headers else headers + (AlphabetIndex.OTHER to index)
+    return headers + (AlphabetIndex.SETTINGS to index)
 }
 
 /**
@@ -260,13 +259,19 @@ fun AllApps(
                 )
             }
         }
-        // Clapet's settings close the list, in « # »: no menu on the home to look for them. With
-        // no app under « # », the item brings the section's letter along.
+        // Clapet's settings close the list, after Z, reached by the index's gear: no menu on the
+        // home to look for them. Its own section, its gear in place of a letter.
         item(key = "settings") {
-            val withHeader = sections.none { it.letter == AlphabetIndex.OTHER }
-            Column(Modifier.graphicsLayer { alpha = if (focusedSection() == AlphabetIndex.OTHER) 1f else othersAlpha() }) {
-                if (withHeader) SectionHeader(AppSection(AlphabetIndex.OTHER, emptyList()))
-                SettingsRow(onOpenSettings, Modifier.padding(top = if (withHeader) 0.dp else 8.dp))
+            Column(Modifier.graphicsLayer { alpha = if (focusedSection() == AlphabetIndex.SETTINGS) 1f else othersAlpha() }) {
+                Icon(
+                    painterResource(R.drawable.ic_settings),
+                    contentDescription = null,
+                    tint = LocalClapetColors.current.accent,
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp, top = SectionGap, bottom = 6.dp)
+                        .size(18.dp),
+                )
+                SettingsRow(onOpenSettings)
             }
         }
     }

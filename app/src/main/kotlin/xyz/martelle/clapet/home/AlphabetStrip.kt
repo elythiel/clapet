@@ -2,9 +2,13 @@ package xyz.martelle.clapet.home
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
@@ -76,6 +81,7 @@ fun AlphabetStrip(
     val selectedIndex = ((if (scrubbing) scrub.letter else null) ?: selected)?.let { letters.indexOf(it) } ?: -1
     val alpha by animateFloatAsState(if (enabled && (revealed || scrubbing)) 1f else 0f, label = "lettersAlpha")
     val indexLabel = stringResource(R.string.alphabet_index)
+    val settingsLabel = stringResource(R.string.list_settings)
 
     Column(
         verticalArrangement = Arrangement.SpaceBetween,
@@ -92,35 +98,49 @@ fun AlphabetStrip(
                 distance <= 3 -> Color(0xFFD9D5CE)
                 else -> Color(0xFF8F8B85)
             }
-            Text(
-                text = letter.toString(),
-                color = color,
-                fontSize = if (distance == 0) 13.sp else (9.5f + max(0, 3 - distance)).sp,
-                fontWeight = FontWeight.Bold,
-                lineHeight = 11.sp,
-                style = MaterialTheme.typography.labelSmall,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .width(LetterLane)
-                    .offset {
-                        // The wave bulges on the scrubbed side, then fades out where it was.
-                        val wave = if (scrubbing || scrub.side == null) scrub.strength.value else 0f
-                        val d = index - scrub.center.value
-                        IntOffset(shiftPx + (pullPx * wave * exp(-(d * d) / 6f)).roundToInt(), 0)
-                    }
-                    .then(
-                        if (enabled) {
-                            Modifier.semantics {
-                                onClick {
-                                    onSelect(letter)
-                                    true
-                                }
+            val size = if (distance == 0) 13f else 9.5f + max(0, 3 - distance)
+            val itemModifier = Modifier
+                .width(LetterLane)
+                .offset {
+                    // The wave bulges on the scrubbed side, then fades out where it was.
+                    val wave = if (scrubbing || scrub.side == null) scrub.strength.value else 0f
+                    val d = index - scrub.center.value
+                    IntOffset(shiftPx + (pullPx * wave * exp(-(d * d) / 6f)).roundToInt(), 0)
+                }
+                .then(
+                    if (enabled) {
+                        Modifier.semantics {
+                            onClick {
+                                onSelect(letter)
+                                true
                             }
-                        } else {
-                            Modifier
-                        },
-                    ),
-            )
+                        }
+                    } else {
+                        Modifier
+                    },
+                )
+            if (letter == AlphabetIndex.SETTINGS) {
+                // The settings close the index: a gear the size of a letter, in the letters' color.
+                Box(itemModifier.height(11.dp), contentAlignment = Alignment.Center) {
+                    Icon(
+                        painterResource(R.drawable.ic_settings),
+                        contentDescription = settingsLabel,
+                        tint = color,
+                        modifier = Modifier.size(size.dp),
+                    )
+                }
+            } else {
+                Text(
+                    text = letter.toString(),
+                    color = color,
+                    fontSize = size.sp,
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 11.sp,
+                    style = MaterialTheme.typography.labelSmall,
+                    textAlign = TextAlign.Center,
+                    modifier = itemModifier,
+                )
+            }
         }
     }
 }
