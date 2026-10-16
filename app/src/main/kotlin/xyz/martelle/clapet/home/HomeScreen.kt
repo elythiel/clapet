@@ -96,10 +96,15 @@ private val ListEdge = 12.dp
 /**
  * Scrub zones overlap the content: only a quick vertical drag starts a scrub, so taps and long
  * presses there still reach the rows. On the home the whole width listens (each half picks its
- * side); once the list is open, only this much of the side in use, so the rest of the list scrolls.
+ * side). Once the list is open, only the band before the content of the side in use listens, so
+ * a scroll that starts on an app's icon stays a scroll: on the start side up to the icons
+ * ([ContentStart]), on the end side a little past the list's end margin ([ContentEnd]).
  */
-private val ScrubZone = 72.dp
-private val ScrubThreshold = 16.dp
+private val ScrubZoneStart = ContentStart - 4.dp
+private val ScrubZoneEnd = ContentEnd + 8.dp
+
+/** Vertical travel that starts a scrub: just past the system's touch slop (about 8 dp), so a tap never does. */
+private val ScrubThreshold = 10.dp
 
 /** Vertical bounds of the letters inside the content area. */
 private val StripTopPadding = 8.dp
@@ -250,7 +255,8 @@ fun HomeScreen(
     val areaLeft = if (geometry != null) 0f else insets.getLeft(density, LayoutDirection.Ltr).toFloat()
     val areaRight = geometry?.cameras?.left?.toFloat()
         ?: (rootSize.width - insets.getRight(density, LayoutDirection.Ltr)).toFloat()
-    val scrubZonePx = with(density) { ScrubZone.toPx() }
+    val scrubZoneStartPx = with(density) { ScrubZoneStart.toPx() }
+    val scrubZoneEndPx = with(density) { ScrubZoneEnd.toPx() }
     val stripTop = insets.getTop(density) + with(density) { StripTopPadding.toPx() }
     val stripBottom = rootSize.height - insets.getBottom(density) - with(density) { StripBottomPadding.toPx() }
 
@@ -262,7 +268,13 @@ fun HomeScreen(
                 state = scrub,
                 left = areaLeft,
                 right = areaRight,
-                zoneWidth = { if (onHome) (areaRight - areaLeft) / 2f else scrubZonePx },
+                zoneWidth = { side ->
+                    when {
+                        onHome -> (areaRight - areaLeft) / 2f
+                        side == StripSide.Start -> scrubZoneStartPx
+                        else -> scrubZoneEndPx
+                    }
+                },
                 threshold = with(density) { ScrubThreshold.toPx() },
                 stripTop = stripTop,
                 stripBottom = stripBottom,

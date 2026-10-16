@@ -58,7 +58,7 @@ class AlphabetScrubState(private val scope: CoroutineScope) {
 
 /**
  * Watches every touch of the screen without taking any, until one becomes a scrub: a vertical
- * drag past [threshold], started near an edge (within [zoneWidth] of [left] or [right], read at each
+ * drag past [threshold], started near an edge (within [zoneWidth] of [left] or [right], per side, read at each
  * touch since it depends on the screen state) and before the long-press timeout. From then on the scrub keeps the touches, so the content under the wide
  * zones still gets its taps, long presses and favorite drags.
  *
@@ -68,7 +68,7 @@ fun Modifier.alphabetScrub(
     state: AlphabetScrubState,
     left: Float,
     right: Float,
-    zoneWidth: () -> Float,
+    zoneWidth: (StripSide) -> Float,
     threshold: Float,
     stripTop: Float,
     stripBottom: Float,
@@ -79,10 +79,9 @@ fun Modifier.alphabetScrub(
 ): Modifier = pointerInput(left, right, stripTop, stripBottom) {
     awaitEachGesture {
         val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-        val zone = zoneWidth()
         val side = when (down.position.x) {
-            in left..(left + zone) -> StripSide.Start
-            in (right - zone)..right -> StripSide.End
+            in left..(left + zoneWidth(StripSide.Start)) -> StripSide.Start
+            in (right - zoneWidth(StripSide.End))..right -> StripSide.End
             else -> null
         }
         if (side == null || !isEnabled(side)) return@awaitEachGesture
