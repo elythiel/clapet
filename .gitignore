@@ -1,0 +1,30 @@
+# Gradle
+.gradle/
+build/
+.kotlin/
+
+# Local SDK path, machine-specific
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+captures/
+
+# Native builds
+.externalNativeBuild/
+.cxx/
+
+# Signing secrets: never commit release keys
+*.jks
+*.keystore
+keystore.properties
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+
+# Claude Code workspace (plan, local settings)
+.claude/
