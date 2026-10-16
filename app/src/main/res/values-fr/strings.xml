@@ -1,3 +1,43 @@
 <resources>
-    <string name="home_placeholder">Rien ici pour l’instant</string>
+    <!-- Accueil -->
+    <string name="home_menu_open">Ouvrir le menu</string>
+    <string name="menu_settings">Paramètres de Clapet</string>
+
+    <!-- Menu des paramètres -->
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_accent">Couleur d’accent</string>
+    <string name="settings_wallpaper">Fond d’écran</string>
+
+    <!-- Couleur d’accent -->
+    <string name="accent_subtitle">Badges, aperçus, boutons, lecteur</string>
+    <string name="accent_mode_auto">Automatique</string>
+    <string name="accent_mode_auto_hint">Couleurs du système (fond d’écran)</string>
+    <string name="accent_mode_palette">Palette</string>
+    <string name="accent_mode_palette_hint">7 couleurs lisibles sur noir</string>
+    <string name="accent_mode_custom">Personnalisée</string>
+    <string name="accent_mode_custom_hint">Sélecteur de couleur libre</string>
+    <string name="accent_summary_palette">Palette · %1$s</string>
+    <string name="accent_pale_pink">Rose pâle</string>
+    <string name="accent_amber">Ambre</string>
+    <string name="accent_coral">Corail</string>
+    <string name="accent_lavender">Lavande</string>
+    <string name="accent_blue">Bleu</string>
+    <string name="accent_turquoise">Turquoise</string>
+    <string name="accent_green">Vert</string>
+    <string name="accent_preview">Aperçu</string>
+    <string name="accent_preview_text">Nouveau message</string>
+    <string name="accent_preview_button">Répondre</string>
+
+    <!-- Fond d’écran -->
+    <string name="wallpaper_black">Noir</string>
+    <string name="wallpaper_black_hint">Sobre, économe sur écran OLED</string>
+    <string name="wallpaper_gallery">Image de la galerie</string>
+    <string name="wallpaper_gallery_hint">Astuce : la même que l’écran externe</string>
+    <string name="wallpaper_pick">Choisir une image…</string>
+    <string name="wallpaper_no_image">Aucune image choisie</string>
+    <string name="wallpaper_import_failed">Impossible d’ouvrir cette image</string>
+    <string name="wallpaper_dim">Assombrissement</string>
+    <string name="wallpaper_dim_value">%1$d\u00A0%%</string>
+    <string name="wallpaper_dim_hint">Garde le texte lisible sur une image claire</string>
+    <string name="wallpaper_summary_gallery">Image de la galerie · %1$d\u00A0%%</string>
 </resources>

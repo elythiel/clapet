@@ -1,9 +1,14 @@
 [versions]
 agp = "9.4.1"
-# Must match the Kotlin Gradle plugin bundled with AGP (built-in Kotlin).
-kotlin = "2.2.10"
+# Newer than the Kotlin bundled with AGP: colorpicker-compose ships Kotlin 2.4 metadata.
+kotlin = "2.4.21"
 composeBom = "2026.09.00"
 activityCompose = "1.13.0"
+lifecycle = "2.11.0"
+datastore = "1.2.1"
+navigationEvent = "1.2.0"
+colorpicker = "1.3.0"
+junit = "4.13.2"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -12,6 +17,12 @@ androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-navigationevent-compose = { module = "androidx.navigationevent:navigationevent-compose", version.ref = "navigationEvent" }
+colorpicker-compose = { module = "com.github.skydoves:colorpicker-compose", version.ref = "colorpicker" }
+junit = { module = "junit:junit", version.ref = "junit" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

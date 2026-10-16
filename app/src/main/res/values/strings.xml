@@ -1,4 +1,51 @@
 <resources>
     <string name="app_name" translatable="false">Clapet</string>
-    <string name="home_placeholder">Nothing here yet</string>
+
+    <!-- Home -->
+    <string name="home_menu_open">Open the menu</string>
+    <string name="menu_settings">Clapet settings</string>
+
+    <!-- Settings menu -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_accent">Accent color</string>
+    <string name="settings_wallpaper">Wallpaper</string>
+    <!-- App name, version, package name. -->
+    <string name="settings_footer" translatable="false">%1$s %2$s · %3$s</string>
+
+    <!-- Accent color -->
+    <string name="accent_subtitle">Badges, previews, buttons, player</string>
+    <string name="accent_mode_auto">Automatic</string>
+    <string name="accent_mode_auto_hint">System colors (wallpaper)</string>
+    <string name="accent_mode_palette">Palette</string>
+    <string name="accent_mode_palette_hint">7 colors readable on black</string>
+    <string name="accent_mode_custom">Custom</string>
+    <string name="accent_mode_custom_hint">Free color picker</string>
+    <!-- Palette color name. -->
+    <string name="accent_summary_palette">Palette · %1$s</string>
+    <string name="accent_pale_pink">Pale pink</string>
+    <string name="accent_amber">Amber</string>
+    <string name="accent_coral">Coral</string>
+    <string name="accent_lavender">Lavender</string>
+    <string name="accent_blue">Blue</string>
+    <string name="accent_turquoise">Turquoise</string>
+    <string name="accent_green">Green</string>
+    <string name="accent_preview">Preview</string>
+    <string name="accent_preview_badge" translatable="false">2</string>
+    <string name="accent_preview_text">New message</string>
+    <string name="accent_preview_button">Reply</string>
+
+    <!-- Wallpaper -->
+    <string name="wallpaper_black">Black</string>
+    <string name="wallpaper_black_hint">Plain, easy on the OLED battery</string>
+    <string name="wallpaper_gallery">Gallery image</string>
+    <string name="wallpaper_gallery_hint">Tip: pick the cover screen\'s own wallpaper</string>
+    <string name="wallpaper_pick">Choose an image…</string>
+    <string name="wallpaper_no_image">No image chosen yet</string>
+    <string name="wallpaper_import_failed">This image could not be opened</string>
+    <string name="wallpaper_dim">Dimming</string>
+    <!-- Dimming percentage. -->
+    <string name="wallpaper_dim_value">%1$d%%</string>
+    <string name="wallpaper_dim_hint">Keeps text readable on a bright image</string>
+    <!-- Dimming percentage. -->
+    <string name="wallpaper_summary_gallery">Gallery image · %1$d%%</string>
 </resources>
