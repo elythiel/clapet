@@ -1,7 +1,5 @@
 <resources>
     <!-- Accueil -->
-    <string name="home_menu_open">Ouvrir le menu</string>
-    <string name="menu_settings">Paramètres de Clapet</string>
 
     <!-- Menu des paramètres -->
     <string name="settings_title">Paramètres</string>
@@ -129,5 +127,6 @@
     <string name="header_ongoing">En cours</string>
     <string name="header_untitled">Sans titre</string>
     <string name="header_open_alarms">ouvrir les réveils</string>
+    <string name="list_settings">Paramètres Clapet</string>
     <string name="header_alarm">Réveil à %1$s</string>
 </resources>

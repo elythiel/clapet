@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -22,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,6 +44,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -204,12 +207,17 @@ fun sectionsOf(apps: List<AppEntry>): List<AppSection> {
     return AlphabetIndex.letters.mapNotNull { letter -> byLetter[letter]?.let { AppSection(letter, it) } }
 }
 
-/** Position of each section header in [AllApps]' list: one header item, then one item per app. */
+/**
+ * Position of each section header in [AllApps]' list: one header item, then one item per app.
+ * « # » is always there: Clapet's settings close the list under it, so with no app filed under
+ * « # » it points at the settings item.
+ */
 fun headerIndexes(sections: List<AppSection>): Map<Char, Int> {
     var index = 0
-    return sections.associate { section ->
+    val headers = sections.associate { section ->
         (section.letter to index).also { index += 1 + section.apps.size }
     }
+    return if (AlphabetIndex.OTHER in headers) headers else headers + (AlphabetIndex.OTHER to index)
 }
 
 /**
@@ -222,6 +230,8 @@ fun AllApps(
     sections: List<AppSection>,
     listState: LazyListState,
     actions: AppActions,
+    /** The last row of the list, after « # »: Clapet's own settings. */
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     /** The section that stays fully drawn while the others take [othersAlpha]; null for none. */
@@ -250,6 +260,45 @@ fun AllApps(
                 )
             }
         }
+        // Clapet's settings close the list, in « # »: no menu on the home to look for them. With
+        // no app under « # », the item brings the section's letter along.
+        item(key = "settings") {
+            val withHeader = sections.none { it.letter == AlphabetIndex.OTHER }
+            Column(Modifier.graphicsLayer { alpha = if (focusedSection() == AlphabetIndex.OTHER) 1f else othersAlpha() }) {
+                if (withHeader) SectionHeader(AppSection(AlphabetIndex.OTHER, emptyList()))
+                SettingsRow(onOpenSettings, Modifier.padding(top = if (withHeader) 0.dp else 8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsRow(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 40.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+    ) {
+        Icon(
+            painterResource(R.drawable.ic_settings),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(24.dp),
+        )
+        Text(
+            stringResource(R.string.list_settings),
+            color = TextPrimary,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Medium,
+            lineHeight = 24.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

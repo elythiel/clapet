@@ -16,7 +16,8 @@ private enum class PressOutcome { Tap, Moved }
  */
 fun Modifier.stillPressGestures(
     onTap: () -> Unit,
-    onLongPress: (Offset) -> Unit,
+    /** Null: a still finger held past the timeout does nothing. */
+    onLongPress: ((Offset) -> Unit)? = null,
 ): Modifier = pointerInput(Unit) {
     awaitEachGesture {
         val down = awaitFirstDown()
@@ -35,7 +36,7 @@ fun Modifier.stillPressGestures(
             }
         }
         when {
-            ended == null -> onLongPress(down.position)
+            ended == null -> onLongPress?.invoke(down.position)
             outcome == PressOutcome.Tap -> onTap()
         }
     }

@@ -20,10 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,7 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
@@ -46,7 +41,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -58,7 +52,6 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import java.io.File
-import kotlin.math.roundToInt
 import xyz.martelle.clapet.R
 import xyz.martelle.clapet.apps.AlphabetIndex
 import xyz.martelle.clapet.apps.AppEntry
@@ -74,9 +67,6 @@ import xyz.martelle.clapet.settings.WallpaperSettings
 import xyz.martelle.clapet.settings.label
 import xyz.martelle.clapet.theme.LocalClapetColors
 import xyz.martelle.clapet.wallpaper.Wallpaper
-
-/** Width kept free left of the cameras so the long-press menu never opens over them. */
-private val MenuWidth = 220.dp
 
 /**
  * HyperOS keeps a 62 px (≈ 19 dp) gesture window on the left edge of the cover screen
@@ -158,12 +148,6 @@ fun HomeScreen(
     onHealthAlertClick: (HealthItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Position and visibility are separate: closing keeps the position, so the menu fades
-    // out where it was instead of jumping to the corner during its exit animation.
-    var menuPosition by remember { mutableStateOf(Offset.Zero) }
-    var menuOpen by remember { mutableStateOf(false) }
-    val openMenuLabel = stringResource(R.string.home_menu_open)
-
     // False shows the favorites; true the list, opened by sliding on the index.
     var listOpen by remember { mutableStateOf(false) }
     // As in Niagara: while the thumb slides, only its section shows; the rest fades in at release.
@@ -191,7 +175,8 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     val sections = remember(apps) { sectionsOf(apps) }
     val headers = remember(sections) { headerIndexes(sections) }
-    val lettersWithApps = remember(sections) { sections.mapTo(HashSet()) { it.letter } }
+    // « # » always leads somewhere: Clapet's settings end the list under it.
+    val lettersWithApps = remember(sections) { sections.mapTo(HashSet()) { it.letter } + AlphabetIndex.OTHER }
     // The section at the top of the list: highlighted in the index, so it follows free scrolling too.
     val visibleLetter by remember(headers) {
         derivedStateOf {
@@ -293,21 +278,8 @@ fun HomeScreen(
             veil = { listProgress.value },
             modifier = Modifier
                 .fillMaxSize()
-                // A swipe on the background, however long, is not a long press.
-                .stillPressGestures(
-                    onTap = { listOpen = false },
-                    onLongPress = {
-                        menuPosition = it
-                        menuOpen = true
-                    },
-                )
-                .semantics {
-                    onLongClick(openMenuLabel) {
-                        menuPosition = Offset.Zero
-                        menuOpen = true
-                        true
-                    }
-                },
+                // A tap on the background closes the list; a swipe there, however long, does nothing.
+                .stillPressGestures(onTap = { listOpen = false }),
         )
 
         // On the cover screen everything stays left of the cameras; elsewhere, the safe area.
@@ -345,6 +317,7 @@ fun HomeScreen(
                 sections = sections,
                 listState = listState,
                 actions = rowActions,
+                onOpenSettings = onOpenSettings,
                 contentPadding = PaddingValues(top = ListTopGap, bottom = ListBottomGap),
                 focusedSection = { focusedSection },
                 othersAlpha = { revealProgress.value },
@@ -421,17 +394,6 @@ fun HomeScreen(
                     .size(with(density) { (right - left).toDp() }, with(density) { (bottom - top).toDp() }),
             )
         }
-
-        HomeMenu(
-            open = menuOpen,
-            position = menuPosition,
-            maxAnchorX = geometry?.cameras?.left,
-            onDismiss = { menuOpen = false },
-            onOpenSettings = {
-                menuOpen = false
-                onOpenSettings()
-            },
-        )
     }
 }
 
@@ -459,26 +421,5 @@ private fun HealthDot(item: HealthItem, onClick: () -> Unit, modifier: Modifier 
             .semantics { contentDescription = description },
     ) {
         Box(Modifier.size(10.dp).background(LocalClapetColors.current.accent, CircleShape))
-    }
-}
-
-@Composable
-private fun HomeMenu(
-    open: Boolean,
-    position: Offset,
-    maxAnchorX: Int?,
-    onDismiss: () -> Unit,
-    onOpenSettings: () -> Unit,
-) {
-    val menuWidthPx = with(LocalDensity.current) { MenuWidth.roundToPx() }
-    val x = position.x.roundToInt()
-    val clampedX = if (maxAnchorX != null) x.coerceIn(0, (maxAnchorX - menuWidthPx).coerceAtLeast(0)) else x
-    Box(Modifier.offset { IntOffset(clampedX, position.y.roundToInt()) }) {
-        DropdownMenu(expanded = open, onDismissRequest = onDismiss) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.menu_settings), style = MaterialTheme.typography.bodyLarge) },
-                onClick = onOpenSettings,
-            )
-        }
     }
 }
