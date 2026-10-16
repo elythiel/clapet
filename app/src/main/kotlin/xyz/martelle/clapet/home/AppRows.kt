@@ -174,7 +174,9 @@ fun FavoritesList(
                         detectDragGesturesAfterLongPress(
                             onDragStart = { start ->
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                dragging = currentFavorites.indexOf(app)
+                                // By key: the app list is rebuilt whenever a package changes, so the
+                                // entry this detector captured may no longer be in the current list.
+                                dragging = currentFavorites.indexOfFirst { it.key == app.key }.takeIf { it >= 0 }
                                 dragOffset = 0f
                                 dragStartY = start.y
                             },
