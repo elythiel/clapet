@@ -69,4 +69,32 @@
     <string name="unlock_shizuku_failed">Shizuku n’a pas pu accorder la permission.</string>
     <string name="unlock_with_adb">Avec adb, depuis un ordinateur</string>
     <string name="unlock_copy">Copier</string>
+
+    <!-- Garder Clapet actif (santé) -->
+    <string name="health_title">Garder Clapet actif</string>
+    <plurals name="health_summary">
+        <item quantity="one">%1$d sur %2$d réglé</item>
+        <item quantity="many">%1$d sur %2$d réglés</item>
+        <item quantity="other">%1$d sur %2$d réglés</item>
+    </plurals>
+    <string name="health_subtitle">HyperOS peut fermer Clapet sans eux</string>
+    <string name="health_ok">Réglé</string>
+    <string name="health_ko">À régler</string>
+    <string name="health_fix">Régler</string>
+    <string name="health_app_info">Infos de l’app</string>
+    <string name="health_cover_home">Retour automatique</string>
+    <string name="health_cover_home_hint">Service d’accessibilité</string>
+    <string name="health_cover_home_restricted">Si Android refuse de l’activer : Infos de l’app › ⋮ › Autoriser les paramètres restreints, puis réessayez.</string>
+    <string name="health_cover_unlock">Apps sur l’écran externe</string>
+    <string name="health_cover_unlock_hint">Permission DUMP</string>
+    <string name="health_auto_start">Démarrage auto</string>
+    <string name="health_auto_start_hint">Réglage Xiaomi</string>
+    <string name="health_battery">Batterie</string>
+    <string name="health_battery_hint">Aucune restriction</string>
+    <string name="health_recents_lock">Verrou des récents</string>
+    <string name="health_recents_lock_hint">Optionnel · dans les apps récentes, appuyez longuement sur Clapet, puis sur le cadenas</string>
+    <string name="health_xiaomi_home">Accueil Xiaomi vide</string>
+    <string name="health_xiaomi_home_hint">Pour un retour sans à-coup, retirez les widgets et les apps de l’accueil Xiaomi de l’écran externe et mettez-lui un fond noir (ou celui de Clapet). Clapet se met en pause 5 minutes pendant ce temps.</string>
+    <string name="health_xiaomi_home_open">Ouvrir l’accueil Xiaomi</string>
+    <string name="home_health_alert">Réglage à faire : %1$s</string>
 </resources>

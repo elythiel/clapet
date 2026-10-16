@@ -14,6 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -32,6 +36,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,6 +49,10 @@ import kotlin.math.roundToInt
 import xyz.martelle.clapet.R
 import xyz.martelle.clapet.cover.CoverGeometry
 import xyz.martelle.clapet.cover.CoverLayout
+import xyz.martelle.clapet.cover.coverStatusBar
+import xyz.martelle.clapet.health.HealthItem
+import xyz.martelle.clapet.settings.label
+import xyz.martelle.clapet.theme.LocalClapetColors
 import xyz.martelle.clapet.settings.WallpaperSettings
 import xyz.martelle.clapet.wallpaper.Wallpaper
 
@@ -59,6 +69,9 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     /** Null when the pseudo-home is off: there is nothing to pause. */
     onPause: (() -> Unit)?,
+    /** First required setting that is off, if any: shown as a small accent dot. */
+    healthAlert: HealthItem?,
+    onHealthAlertClick: (HealthItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var menuAt by remember { mutableStateOf<Offset?>(null) }
@@ -81,10 +94,21 @@ fun HomeScreen(
         )
 
         val shortcutList = @Composable { ShortcutList(shortcuts, onShortcutClick) }
+        val alert = @Composable {
+            if (healthAlert != null) HealthDot(healthAlert, onClick = { onHealthAlertClick(healthAlert) })
+        }
         if (geometry != null) {
-            CoverLayout(geometry, Modifier.fillMaxSize(), column = { shortcutList() })
+            CoverLayout(
+                geometry,
+                Modifier.fillMaxSize(),
+                topBand = { Box(Modifier.windowInsetsPadding(WindowInsets.coverStatusBar)) { alert() } },
+                column = { shortcutList() },
+            )
         } else {
-            Box(Modifier.safeDrawingPadding()) { shortcutList() }
+            Column(Modifier.safeDrawingPadding()) {
+                alert()
+                shortcutList()
+            }
         }
 
         HomeMenu(
@@ -132,6 +156,23 @@ private fun ShortcutList(shortcuts: List<Shortcut>, onClick: (Shortcut) -> Unit,
                 )
             }
         }
+    }
+}
+
+/** Discreet on purpose: a 10 dp accent dot, in a full 48 dp touch target. */
+@Composable
+private fun HealthDot(item: HealthItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val description = stringResource(R.string.home_health_alert, stringResource(item.label))
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .padding(start = 8.dp)
+            .size(48.dp)
+            .clip(CircleShape)
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = description },
+    ) {
+        Box(Modifier.size(10.dp).background(LocalClapetColors.current.accent, CircleShape))
     }
 }
 

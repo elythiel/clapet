@@ -80,4 +80,33 @@
     <string name="unlock_with_adb">With adb, from a computer</string>
     <string name="unlock_adb_command" translatable="false">adb shell pm grant xyz.martelle.clapet android.permission.DUMP</string>
     <string name="unlock_copy">Copy</string>
+
+    <!-- Keep Clapet running (health) -->
+    <string name="health_title">Keep Clapet running</string>
+    <!-- Settings set, then total. -->
+    <plurals name="health_summary">
+        <item quantity="one">%1$d of %2$d set</item>
+        <item quantity="other">%1$d of %2$d set</item>
+    </plurals>
+    <string name="health_subtitle">HyperOS may close Clapet without them</string>
+    <string name="health_ok">Set</string>
+    <string name="health_ko">To set</string>
+    <string name="health_fix">Set up</string>
+    <string name="health_app_info">App info</string>
+    <string name="health_cover_home">Automatic return</string>
+    <string name="health_cover_home_hint">Accessibility service</string>
+    <string name="health_cover_home_restricted">If Android refuses to turn it on: App info › ⋮ › Allow restricted settings, then try again.</string>
+    <string name="health_cover_unlock">Apps on the cover screen</string>
+    <string name="health_cover_unlock_hint">DUMP permission</string>
+    <string name="health_auto_start">Autostart</string>
+    <string name="health_auto_start_hint">Xiaomi setting</string>
+    <string name="health_battery">Battery</string>
+    <string name="health_battery_hint">No restrictions</string>
+    <string name="health_recents_lock">Lock in recents</string>
+    <string name="health_recents_lock_hint">Optional · in recent apps, long-press Clapet, then tap the lock</string>
+    <string name="health_xiaomi_home">Empty Xiaomi cover home</string>
+    <string name="health_xiaomi_home_hint">For a seamless return, remove the widgets and apps from the Xiaomi cover home and give it a black wallpaper (or Clapet\'s wallpaper). Clapet pauses for 5 minutes meanwhile.</string>
+    <string name="health_xiaomi_home_open">Open the Xiaomi home</string>
+    <!-- Name of the setting to fix, e.g. "Battery". -->
+    <string name="home_health_alert">Setting to fix: %1$s</string>
 </resources>

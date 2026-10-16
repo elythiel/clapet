@@ -63,6 +63,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import xyz.martelle.clapet.R
+import xyz.martelle.clapet.health.HealthReport
 import xyz.martelle.clapet.theme.AccentPalette
 import xyz.martelle.clapet.theme.LocalClapetColors
 
@@ -72,6 +73,7 @@ internal fun SettingsMenu(
     wallpaper: WallpaperSettings,
     pseudoHome: PseudoHomeSettings,
     unlock: UnlockUiState,
+    health: HealthReport,
     appInfo: AppInfo,
     onPseudoHomeEnabledChange: (Boolean) -> Unit,
     onOpen: (SettingsPage) -> Unit,
@@ -80,6 +82,17 @@ internal fun SettingsMenu(
     Column(modifier.fillMaxSize().padding(horizontal = 12.dp)) {
         PageTitle(stringResource(R.string.settings_title))
         SettingsGroup {
+            SettingsEntry(
+                icon = R.drawable.ic_shield,
+                title = stringResource(R.string.health_title),
+                summary = healthSummary(health),
+                onClick = { onOpen(SettingsPage.Health) },
+            ) {
+                if (health.firstBroken != null) {
+                    Box(Modifier.size(8.dp).background(LocalClapetColors.current.accent, CircleShape))
+                }
+            }
+            HorizontalDivider(Modifier.padding(horizontal = 16.dp))
             SwitchEntry(
                 title = stringResource(R.string.settings_pseudo_home),
                 summary = pseudoHomeSummary(pseudoHome),

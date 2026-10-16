@@ -68,6 +68,15 @@ class SettingsRepository(context: Context) {
         }
         .distinctUntilChanged()
 
+    /** False until the "Keep Clapet running" page has been shown once (first launch). */
+    val onboardingSeen: Flow<Boolean> = dataStore.data
+        .map { it[Keys.onboardingSeen] ?: false }
+        .distinctUntilChanged()
+
+    suspend fun markOnboardingSeen() {
+        dataStore.edit { it[Keys.onboardingSeen] = true }
+    }
+
     suspend fun recordUnlock(atMillis: Long, appCount: Int) {
         dataStore.edit {
             it[Keys.unlockLastAt] = atMillis
@@ -149,6 +158,7 @@ class SettingsRepository(context: Context) {
         val pseudoHomePausedUntil = longPreferencesKey("pseudo_home_paused_until")
         val unlockLastAt = longPreferencesKey("unlock_last_at")
         val unlockAppCount = intPreferencesKey("unlock_app_count")
+        val onboardingSeen = booleanPreferencesKey("onboarding_seen")
     }
 
     private companion object {

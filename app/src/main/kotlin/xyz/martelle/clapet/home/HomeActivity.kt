@@ -14,23 +14,26 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.lifecycleScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import xyz.martelle.clapet.R
 import xyz.martelle.clapet.cover.coverGeometry
 import xyz.martelle.clapet.cover.rememberCoverGeometry
 import xyz.martelle.clapet.settings.SettingsActivity
 import xyz.martelle.clapet.coverUnlock
+import xyz.martelle.clapet.health.HealthChecker
+import xyz.martelle.clapet.health.HealthReport
+import xyz.martelle.clapet.health.openHealthFix
+import xyz.martelle.clapet.pseudohome.pausePseudoHomeAndStepAside
 import xyz.martelle.clapet.settingsRepository
 import xyz.martelle.clapet.theme.ClapetTheme
-
-/** How long "Pause for 5 minutes" leaves FlipLauncher alone. */
-private const val PAUSE_DURATION_MS = 5 * 60 * 1000L
 
 /**
  * The cover-screen home. Translucent window (see the Home theme), always drawn opaque by Compose.
@@ -46,6 +49,7 @@ class HomeActivity : ComponentActivity() {
         // The allow list may be stale (apps installed while the process was dead): replay it.
         coverUnlock.requestUnlock()
         val settings = settingsRepository
+        val healthChecker = HealthChecker(this)
         setContent {
             NavigationBackHandler(
                 state = rememberNavigationEventState(currentInfo = NavigationEventInfo.None),
@@ -59,6 +63,12 @@ class HomeActivity : ComponentActivity() {
                 value = withContext(Dispatchers.Default) { loadShortcuts(this@HomeActivity, TemporaryShortcutQueries) }
             }
             val geometry = rememberCoverGeometry()
+            // Settings can break outside the app (an HyperOS update, for instance): re-check on every return.
+            var health by remember { mutableStateOf<HealthReport?>(null) }
+            LifecycleResumeEffect(Unit) {
+                health = healthChecker.read()
+                onPauseOrDispose {}
+            }
 
             val currentAccent = accent
             val currentWallpaper = wallpaper
@@ -75,7 +85,9 @@ class HomeActivity : ComponentActivity() {
                     shortcuts = shortcuts,
                     onShortcutClick = { launch(it) },
                     onOpenSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
-                    onPause = if (pseudoHome?.enabled == true) ::pauseAndStepAside else null,
+                    onPause = if (pseudoHome?.enabled == true) ::pausePseudoHomeAndStepAside else null,
+                    healthAlert = health?.firstBroken,
+                    onHealthAlertClick = { openHealthFix(it) },
                 )
             }
         }
@@ -85,13 +97,5 @@ class HomeActivity : ComponentActivity() {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         if (coverGeometry() == null) moveTaskToBack(true)
-    }
-
-    /** Lets the user reach FlipLauncher (to empty it, for instance) without switching the service off. */
-    private fun pauseAndStepAside() {
-        lifecycleScope.launch {
-            settingsRepository.pausePseudoHome(untilMillis = System.currentTimeMillis() + PAUSE_DURATION_MS)
-            moveTaskToBack(true)
-        }
     }
 }
