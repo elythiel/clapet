@@ -7,7 +7,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -38,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -165,15 +163,14 @@ fun HomeScreen(
             blurRadius = blur,
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onTap = { listOpen = false },
-                        onLongPress = {
-                            menuPosition = it
-                            menuOpen = true
-                        },
-                    )
-                }
+                // A swipe on the background, however long, is not a long press.
+                .stillPressGestures(
+                    onTap = { listOpen = false },
+                    onLongPress = {
+                        menuPosition = it
+                        menuOpen = true
+                    },
+                )
                 .semantics {
                     onLongClick(openMenuLabel) {
                         menuPosition = Offset.Zero
