@@ -33,6 +33,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -54,10 +55,12 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -281,6 +284,12 @@ private fun NotificationCard(
     val scope = rememberCoroutineScope()
     var width by remember { mutableIntStateOf(0) }
     val clearLabel = stringResource(R.string.notification_clear)
+    // Which side the card uncovers, and whether letting go now clears it: only these two change
+    // what is drawn under the card, so the swipe itself recomposes nothing.
+    val towardsEnd by remember { derivedStateOf { swipe.value >= 0f } }
+    val armed by remember { derivedStateOf { width > 0 && abs(swipe.value) > width * DismissFraction } }
+    val haptic = LocalHapticFeedback.current
+    LaunchedEffect(armed) { if (armed) haptic.performHapticFeedback(HapticFeedbackType.SegmentTick) }
     // Swiped either way to clear, as in the system shade. The detector sits on this box, which
     // never moves: the card inside follows the finger.
     Box(
@@ -309,6 +318,28 @@ private fun NotificationCard(
             // TalkBack cannot swipe a card: clearing stays one action away.
             .semantics { customActions = listOf(CustomAccessibilityAction(clearLabel) { onClear(); true }) },
     ) {
+    // Under the card, on the side it uncovers: a bin that grows as the card moves away, and
+    // takes the accent once releasing would clear.
+    Box(
+        contentAlignment = if (towardsEnd) Alignment.CenterStart else Alignment.CenterEnd,
+        modifier = Modifier
+            .matchParentSize()
+            .padding(horizontal = 20.dp),
+    ) {
+        Icon(
+            painterResource(R.drawable.ic_delete),
+            contentDescription = null,
+            tint = if (armed) LocalClapetColors.current.accent else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .size(22.dp)
+                .graphicsLayer {
+                    val progress = (abs(swipe.value) / (width * DismissFraction).coerceAtLeast(1f)).coerceIn(0f, 1f)
+                    alpha = progress
+                    scaleX = 0.6f + 0.4f * progress
+                    scaleY = scaleX
+                },
+        )
+    }
     Column(
         verticalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier

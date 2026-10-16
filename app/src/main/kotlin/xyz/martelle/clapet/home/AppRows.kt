@@ -28,6 +28,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -357,6 +359,9 @@ private fun AppRow(
     val density = LocalDensity.current
     val maxSwipePx = with(density) { SwipeMax.toPx() }
     val thresholdPx = with(density) { SwipeThreshold.toPx() }
+    // Past the threshold, letting go opens the panel: the bell under the row says so, with a tick.
+    val armed by remember { derivedStateOf { swipe.value >= thresholdPx } }
+    LaunchedEffect(armed) { if (armed) haptic.performHapticFeedback(HapticFeedbackType.SegmentTick) }
     // The detector stays on the box, which never moves; only the content follows the finger.
     Box(
         contentAlignment = Alignment.CenterStart,
@@ -373,10 +378,7 @@ private fun AppRow(
                     Modifier.pointerInput(Unit) {
                         detectHorizontalDragGestures(
                             onDragEnd = {
-                                if (swipe.value >= thresholdPx) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                                    currentOnSwipe(centerY.floatValue)
-                                }
+                                if (swipe.value >= thresholdPx) currentOnSwipe(centerY.floatValue)
                                 scope.launch { swipe.animateTo(0f) }
                             },
                             onDragCancel = { scope.launch { swipe.animateTo(0f) } },
@@ -389,6 +391,22 @@ private fun AppRow(
             )
             .padding(horizontal = 8.dp, vertical = 2.dp),
     ) {
+        if (notifications != null) {
+            // Under the row, in the room it uncovers: what the swipe does (unfold the notifications).
+            Icon(
+                painterResource(R.drawable.ic_notifications),
+                contentDescription = null,
+                tint = if (armed) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .size(20.dp)
+                    .graphicsLayer {
+                        val progress = (swipe.value / thresholdPx).coerceIn(0f, 1f)
+                        alpha = progress
+                        scaleX = 0.6f + 0.4f * progress
+                        scaleY = scaleX
+                    },
+            )
+        }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
