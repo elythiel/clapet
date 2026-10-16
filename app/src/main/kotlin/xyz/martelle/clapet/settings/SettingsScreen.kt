@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -18,6 +19,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
@@ -122,14 +124,18 @@ fun SettingsScreen(
 }
 
 /**
- * On the cover screen, everything stays left of the cameras, which already clears the
- * cutout, so only the status bar is padded; elsewhere, the full safe area.
+ * On the cover screen, everything stays beside the cameras (left of them, right once upside
+ * down), which already clears the cutout, so only the status bar is padded; elsewhere, the full
+ * safe area.
  */
 @Composable
 private fun Modifier.contentArea(geometry: CoverGeometry?): Modifier =
     if (geometry == null) {
         fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)
     } else {
-        val width = with(LocalDensity.current) { geometry.cameras.left.toDp() }
-        width(width).fillMaxHeight().windowInsetsPadding(WindowInsets.coverStatusBar)
+        val width = with(LocalDensity.current) { geometry.content.width.toDp() }
+        offset { IntOffset(geometry.content.left, 0) }
+            .width(width)
+            .fillMaxHeight()
+            .windowInsetsPadding(WindowInsets.coverStatusBar)
     }

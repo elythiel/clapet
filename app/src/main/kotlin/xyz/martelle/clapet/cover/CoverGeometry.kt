@@ -10,30 +10,38 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.IntRect
 
 /**
- * Layout zones of the Mix Flip cover screen, in window pixels, derived from the camera
- * cutout Android declares in the bottom-right corner (1208 × 1392 window, cutout
- * (810, 664) → (1208, 1392) on the tested phone).
+ * Layout zones of the Mix Flip cover screen, in window pixels, derived from the camera cutout
+ * Android declares: bottom right with the phone held upright ((810, 664) → (1208, 1392) in a
+ * 1208 × 1392 window on the tested phone), top left once turned upside down.
  *
  * Only the two lenses actually hide pixels, so the wallpaper may draw everywhere,
  * but nothing interactive or textual may sit inside [cameras].
  */
 @Immutable
 data class CoverGeometry(val width: Int, val height: Int, val cameras: IntRect) {
-    /** Full width, above the cameras. */
-    val topBand: IntRect get() = IntRect(0, 0, width, cameras.top)
+    /** The phone is held upside down: the cameras sit top left instead of bottom right. */
+    val upsideDown: Boolean get() = cameras.left <= 0
 
-    /** Left of the cameras, below the band. */
-    val column: IntRect get() = IntRect(0, cameras.top, cameras.left, height)
+    /** Full height, beside the cameras: where everything textual or interactive goes. */
+    val content: IntRect
+        get() = if (upsideDown) IntRect(cameras.right, 0, width, height) else IntRect(0, 0, cameras.left, height)
 
-    /** Right part of the band, straight above the cameras. */
-    val square: IntRect get() = IntRect(cameras.left, 0, width, cameras.top)
+    /** The rest of the cameras' column, above them (below once upside down): the player's square. */
+    val square: IntRect
+        get() = if (upsideDown) IntRect(0, cameras.bottom, cameras.right, height) else IntRect(cameras.left, 0, width, cameras.top)
 
     companion object {
-        /** Returns null when no cutout sits in the bottom-right corner, i.e. not on the cover screen. */
+        /** Returns null when no cutout fills a corner of the window, i.e. not on the cover screen. */
         fun from(width: Int, height: Int, cutouts: List<IntRect>): CoverGeometry? =
             cutouts
-                .firstOrNull { it.right >= width && it.bottom >= height && it.left > 0 && it.top > 0 }
+                .firstOrNull { it.isBottomRightBlock(width, height) || it.isTopLeftBlock(width, height) }
                 ?.let { CoverGeometry(width, height, it) }
+
+        private fun IntRect.isBottomRightBlock(width: Int, height: Int) =
+            right >= width && bottom >= height && left > 0 && top > 0
+
+        private fun IntRect.isTopLeftBlock(width: Int, height: Int) =
+            left <= 0 && top <= 0 && right < width && bottom < height
     }
 }
 

@@ -46,9 +46,9 @@ enum class StripSide { Start, End }
 private val LetterLane = 12.dp
 
 /**
- * On the start side, the letters are drawn this far left, straddling the edge band HyperOS keeps
- * for its own gestures (touches there never reach Clapet). The end side, next to the cameras, has
- * no such band: no shift.
+ * Against the screen's edge, the letters are drawn this far outwards, straddling the band HyperOS
+ * keeps there for its own gestures (touches in it never reach Clapet). The side next to the
+ * cameras has no such band: no shift.
  */
 private val LetterShift = (-8).dp
 
@@ -70,13 +70,16 @@ fun AlphabetStrip(
     revealed: Boolean = true,
     /** When false the strip is hidden and silent, leaving its room to the list. */
     enabled: Boolean = true,
+    /** Against the screen's edge (not the cameras): the letters straddle HyperOS's gesture band. */
+    atScreenEdge: Boolean = side == StripSide.Start,
 ) {
     val letters = AlphabetIndex.letters
     val scrubbing = scrub.side == side
     val inwards = if (side == StripSide.Start) 1 else -1
     val density = LocalDensity.current
     val pullPx = with(density) { WavePull.toPx() } * inwards
-    val shiftPx = if (side == StripSide.Start) with(density) { LetterShift.roundToPx() } else 0
+    // Towards the edge: left on the start side, right on the end side.
+    val shiftPx = if (atScreenEdge) with(density) { LetterShift.roundToPx() } * inwards else 0
     val accent = LocalClapetColors.current.accent
     val selectedIndex = ((if (scrubbing) scrub.letter else null) ?: selected)?.let { letters.indexOf(it) } ?: -1
     val alpha by animateFloatAsState(if (enabled && (revealed || scrubbing)) 1f else 0f, label = "lettersAlpha")

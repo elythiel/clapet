@@ -61,7 +61,9 @@
         </activity>
 
         <!-- Folding and unfolding change the configuration: handled in Compose, not by
-             recreating the activity. -->
+             recreating the activity. Portrait either way up, as HyperOS's rotation setting for
+             the screen in use allows (the cover screen has its own). Both screens are under
+             600 dp wide, where Android still honours the orientation. -->
         <activity
             android:name=".home.HomeActivity"
             android:configChanges="density|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize"
@@ -71,7 +73,9 @@
             android:resizeableActivity="true"
             android:taskAffinity="xyz.martelle.clapet.home"
             android:theme="@style/Theme.Clapet.Home"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:screenOrientation="userPortrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity">
             <meta-data
                 android:name="miui.supportFlipFullScreen"
                 android:value="0" />
@@ -85,7 +89,9 @@
             android:name=".settings.SettingsActivity"
             android:configChanges="density|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize"
             android:exported="false"
-            android:resizeableActivity="true">
+            android:resizeableActivity="true"
+            android:screenOrientation="userPortrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity">
             <meta-data
                 android:name="miui.supportFlipFullScreen"
                 android:value="0" />

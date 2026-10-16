@@ -14,20 +14,32 @@ class CoverGeometryTest {
     private val cameras = IntRect(810, 664, 1208, 1392)
 
     @Test
-    fun `bottom-right cutout gives the three cover zones`() {
+    fun `upright, content is left of the cameras and the player above them`() {
         val geometry = assertNotNull(CoverGeometry.from(width, height, listOf(cameras)))
 
-        assertEquals(IntRect(0, 0, 1208, 664), geometry.topBand)
-        assertEquals(IntRect(0, 664, 810, 1392), geometry.column)
+        assertEquals(false, geometry.upsideDown)
+        assertEquals(IntRect(0, 0, 810, 1392), geometry.content)
         assertEquals(IntRect(810, 0, 1208, 664), geometry.square)
     }
 
     @Test
-    fun `no zone overlaps the cameras`() {
-        val geometry = assertNotNull(CoverGeometry.from(width, height, listOf(cameras)))
+    fun `upside down, the cameras move top left and everything mirrors`() {
+        // The same lenses once the display turns 180°.
+        val turned = IntRect(0, 0, 398, 728)
+        val geometry = assertNotNull(CoverGeometry.from(width, height, listOf(turned)))
 
-        listOf(geometry.topBand, geometry.column, geometry.square).forEach { zone ->
-            assertEquals(false, zone.overlaps(geometry.cameras))
+        assertEquals(true, geometry.upsideDown)
+        assertEquals(IntRect(398, 0, 1208, 1392), geometry.content)
+        assertEquals(IntRect(0, 728, 398, 1392), geometry.square)
+    }
+
+    @Test
+    fun `no zone overlaps the cameras, either way up`() {
+        listOf(cameras, IntRect(0, 0, 398, 728)).forEach { lenses ->
+            val geometry = assertNotNull(CoverGeometry.from(width, height, listOf(lenses)))
+            listOf(geometry.content, geometry.square).forEach { zone ->
+                assertEquals(false, zone.overlaps(geometry.cameras))
+            }
         }
     }
 

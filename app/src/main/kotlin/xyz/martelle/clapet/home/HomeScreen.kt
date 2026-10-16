@@ -244,9 +244,17 @@ fun HomeScreen(
 
     val density = LocalDensity.current
     val insets = if (geometry != null) WindowInsets.coverStatusBar else WindowInsets.safeDrawing
-    val areaLeft = if (geometry != null) 0f else insets.getLeft(density, LayoutDirection.Ltr).toFloat()
-    val areaRight = geometry?.cameras?.left?.toFloat()
+    val areaLeft = geometry?.content?.left?.toFloat() ?: insets.getLeft(density, LayoutDirection.Ltr).toFloat()
+    val areaRight = geometry?.content?.right?.toFloat()
         ?: (rootSize.width - insets.getRight(density, LayoutDirection.Ltr)).toFloat()
+    // The side against the screen's edge, where HyperOS keeps its gesture band; the other one
+    // borders the cameras. Upright the edge is on the left, upside down on the right.
+    val edgeSide = if (geometry?.upsideDown == true) StripSide.End else StripSide.Start
+    // Per side: how far its index sits from that border, the room the list leaves beside the
+    // index in use, and the list's margin when that index is idle.
+    fun stripInset(side: StripSide) = if (side == edgeSide) StripStart else 0.dp
+    fun besideStrip(side: StripSide) = if (side == edgeSide) ContentStart - 8.dp else ContentEnd
+    fun listMargin(side: StripSide) = if (side == edgeSide) ListEdge else 0.dp
     val scrubZoneStartPx = with(density) { ScrubZoneStart.toPx() }
     val scrubZoneEndPx = with(density) { ScrubZoneEnd.toPx() }
     val stripTop = insets.getTop(density) + with(density) { StripTopPadding.toPx() }
@@ -263,7 +271,7 @@ fun HomeScreen(
                 zoneWidth = { side ->
                     when {
                         onHome -> (areaRight - areaLeft) / 2f
-                        side == StripSide.Start -> scrubZoneStartPx
+                        side == edgeSide -> scrubZoneStartPx
                         else -> scrubZoneEndPx
                     }
                 },
@@ -288,10 +296,11 @@ fun HomeScreen(
                 .stillPressGestures(onTap = { listOpen = false }),
         )
 
-        // On the cover screen everything stays left of the cameras; elsewhere, the safe area.
+        // On the cover screen everything stays beside the cameras; elsewhere, the safe area.
         val area = if (geometry != null) {
             Modifier
-                .width(with(density) { geometry.cameras.left.toDp() })
+                .offset { IntOffset(geometry.content.left, 0) }
+                .width(with(density) { geometry.content.width.toDp() })
                 .fillMaxHeight()
                 .windowInsetsPadding(WindowInsets.coverStatusBar)
         } else {
@@ -304,7 +313,7 @@ fun HomeScreen(
             Column(
                 Modifier
                     .fadeLayer { 1f - listProgress.value }
-                    .padding(start = ListEdge),
+                    .padding(start = ListEdge, end = listMargin(StripSide.End)),
             ) {
                 HomeHeader(
                     header = header,
@@ -332,8 +341,8 @@ fun HomeScreen(
                 modifier = Modifier
                     .fadeLayer { listProgress.value }
                     .padding(
-                        start = if (activeSide == StripSide.Start) ContentStart - 8.dp else ListEdge,
-                        end = if (activeSide == StripSide.End) ContentEnd else 0.dp,
+                        start = if (activeSide == StripSide.Start) besideStrip(StripSide.Start) else listMargin(StripSide.Start),
+                        end = if (activeSide == StripSide.End) besideStrip(StripSide.End) else listMargin(StripSide.End),
                     ),
             )
             // Two indexes, one per edge, invisible on the home so either thumb can start. Once the
@@ -350,10 +359,12 @@ fun HomeScreen(
                     },
                     revealed = listOpen && activeSide == side,
                     enabled = !listOpen || activeSide == side,
+                    atScreenEdge = side == edgeSide,
                     modifier = Modifier
                         .align(if (side == StripSide.Start) Alignment.TopStart else Alignment.TopEnd)
                         .padding(
-                            start = if (side == StripSide.Start) StripStart else 0.dp,
+                            start = if (side == StripSide.Start) stripInset(side) else 0.dp,
+                            end = if (side == StripSide.End) stripInset(side) else 0.dp,
                             top = StripTopPadding,
                             bottom = StripBottomPadding,
                         )
@@ -381,18 +392,20 @@ fun HomeScreen(
                         if (unfoldedApp.key in favoriteKeys) actions.onRemoveFavorite(unfoldedApp) else actions.onAddFavorite(unfoldedApp)
                     },
                     onAppInfo = { actions.onAppInfo(unfoldedApp) },
+                    camerasOnStart = geometry?.upsideDown == true,
                 )
             }
         }
 
-        // The square above the cameras, between the status bar and the lenses. Hidden under an
-        // open panel, whose backdrop reaches past the cameras' edge.
+        // The free square of the cameras' column (above them, below once upside down), clear of
+        // the status bar. Hidden under an open panel, whose backdrop reaches past the cameras' edge.
         if (geometry != null && nowPlaying != null && unfolded == null) {
             val gap = with(density) { PlayerGap.roundToPx() }
-            val top = insets.getTop(density) + gap
-            val left = geometry.cameras.left + gap
-            val right = geometry.cameras.right - gap
-            val bottom = geometry.cameras.top - gap
+            val square = geometry.square
+            val top = maxOf(square.top, insets.getTop(density)) + gap
+            val left = square.left + gap
+            val right = square.right - gap
+            val bottom = square.bottom - gap
             NowPlayingCard(
                 nowPlaying = nowPlaying,
                 actions = mediaActions,

@@ -52,6 +52,7 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.Dp
 import kotlin.math.roundToInt
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -111,8 +112,13 @@ fun NotificationsPanel(
     onFavoriteToggle: () -> Unit,
     onAppInfo: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Upside down, the cameras border the panel's start, and the screen's edge its end. */
+    camerasOnStart: Boolean = false,
 ) {
     var replyingTo by remember { mutableStateOf<String?>(null) }
+    // Off the screen's edge, flush with the cameras' side: the backdrop reaches under them instead.
+    val edgeInset = PanelInset
+    val outerStart = if (camerasOnStart) 0.dp else edgeInset
     val closeLabel = stringResource(R.string.notifications_close)
     // Opens from its center: the content stays in place and is uncovered upwards and downwards.
     val reveal = remember { Animatable(0f) }
@@ -129,7 +135,7 @@ fun NotificationsPanel(
             Modifier
                 // Under the finger, kept off the screen's edges (they round off on the cover screen).
                 .centeredOn(anchorY, top = 4.dp, bottom = PanelInset)
-                .padding(start = PanelInset)
+                .padding(start = outerStart, end = if (camerasOnStart) edgeInset else 0.dp)
                 .drawWithContent {
                     val half = size.height / 2f
                     val shown = half * reveal.value
@@ -139,19 +145,28 @@ fun NotificationsPanel(
                     }
                 }
                 // As tall as its content. Wider than the column: past the cameras' edge, so the
-                // cards keep room on the right and the corners land under the lenses.
+                // cards keep room on that side and the corners land under the lenses.
                 .drawBehind {
+                    val overhang = BackdropOverhang.toPx()
                     drawRoundRect(
                         Color.Black.copy(alpha = PanelOpacity),
-                        size = Size(size.width + BackdropOverhang.toPx(), size.height),
+                        topLeft = Offset(if (camerasOnStart) -overhang else 0f, 0f),
+                        size = Size(size.width + overhang, size.height),
                         cornerRadius = CornerRadius(PanelCorner.toPx()),
                     )
                 }
                 // Taps on the panel itself, between its parts, do not close it.
                 .pointerInput(Unit) { detectTapGestures {} }
-                .padding(start = ListEdgeForPanel - PanelInset, top = 4.dp, bottom = 8.dp),
+                .padding(
+                    start = ListEdgeForPanel - outerStart,
+                    end = if (camerasOnStart) PanelEndRoom else 0.dp,
+                    top = 4.dp,
+                    bottom = 8.dp,
+                ),
         ) {
-            PanelHeader(app, isFavorite, favoritesFull, onFavoriteToggle, onAppInfo)
+            // Upright, the title row may reach into the overhang: up there, above the lenses, it is
+            // free. Upside down the lenses are up there: it stays inside.
+            PanelHeader(app, isFavorite, favoritesFull, onFavoriteToggle, onAppInfo, reachIntoOverhang = !camerasOnStart)
             if (notifications != null) {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -186,12 +201,13 @@ private fun PanelHeader(
     favoritesFull: Boolean,
     onFavoriteToggle: () -> Unit,
     onAppInfo: () -> Unit,
+    reachIntoOverhang: Boolean,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .layout { measurable, constraints ->
-                val extra = HeaderOverhang.roundToPx()
+                val extra = if (reachIntoOverhang) HeaderOverhang.roundToPx() else 0
                 val placeable = measurable.measure(constraints.copy(maxWidth = constraints.maxWidth + extra))
                 layout(constraints.maxWidth, placeable.height) { placeable.place(0, 0) }
             }
@@ -232,6 +248,9 @@ private fun PanelHeader(
 /** Drawn buttons, side by side; 44 dp each keeps them comfortable to the thumb. */
 private val HeaderButton = 44.dp
 private val HeaderOverhang = 16.dp
+
+/** Upside down, the cards' room before the screen's edge (upright, the overhang gives it). */
+private val PanelEndRoom = 8.dp
 
 /** Nearly opaque: over the home, the rows under the panel must not show through its text. */
 private const val PanelOpacity = 0.97f
