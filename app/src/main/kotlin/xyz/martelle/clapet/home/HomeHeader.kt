@@ -146,9 +146,8 @@ fun HomeHeader(
 @Composable
 private fun EventRow(event: UpcomingEvent, header: HeaderInfo, formats: HeaderFormats, onClick: () -> Unit) {
     val title = event.title.ifBlank { stringResource(R.string.header_untitled) }
-    val line = if (event.allDay) title else "${formats.time(event.startsAt)} · $title"
     val day = Upcoming.dayOf(event, header.today)
-    val whenLabel = when {
+    val dayLabel = when {
         event.ongoing && !event.allDay -> stringResource(R.string.header_ongoing)
         else -> when (Upcoming.dayKind(day, header.today)) {
             DayKind.Today -> stringResource(R.string.header_today)
@@ -156,6 +155,9 @@ private fun EventRow(event: UpcomingEvent, header: HeaderInfo, formats: HeaderFo
             DayKind.Later -> formats.shortDate(day)
         }
     }
+    // The title alone on top; the day and the time range share the second line
+    // (« Demain · 9:00 – 11:00 »). An all-day event has no range.
+    val whenLabel = if (event.allDay) dayLabel else "$dayLabel · ${formats.range(event.startsAt, event.endsAt)}"
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -175,7 +177,7 @@ private fun EventRow(event: UpcomingEvent, header: HeaderInfo, formats: HeaderFo
         )
         Column {
             Text(
-                line,
+                title,
                 color = TextPrimary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -196,6 +198,13 @@ private class HeaderFormats(private val locale: Locale, use24Hour: Boolean) {
 
     fun shortDate(date: LocalDate): String = shortDateFormat.format(date).capitalized()
     fun time(time: LocalDateTime): String = timeFormat.format(time)
+
+    /** « 9:00 – 11:00 », or « 22:00 – Sam. 01:00 » for an event ending on another day. */
+    fun range(start: LocalDateTime, end: LocalDateTime): String {
+        val endLabel = if (end.toLocalDate() == start.toLocalDate()) timeFormat.format(end) else dayTimeFormat.format(end).capitalized()
+        return "${timeFormat.format(start)} – $endLabel"
+    }
+
     fun alarm(alarm: LocalDateTime, showsDay: Boolean): String =
         (if (showsDay) dayTimeFormat else timeFormat).format(alarm).capitalized()
 
