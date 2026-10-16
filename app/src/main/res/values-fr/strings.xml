@@ -48,4 +48,25 @@
     <string name="pseudo_home_on">Clapet remplace l’accueil Xiaomi de l’écran externe</string>
     <string name="pseudo_home_off">Accueil Xiaomi d’origine</string>
     <string name="pseudo_home_paused">Suspendu jusqu’à %1$s</string>
+
+    <!-- Débridage de l’écran externe -->
+    <string name="settings_unlock">Écran externe</string>
+    <string name="unlock_subtitle">Autorise toutes les apps à s’ouvrir sur l’écran externe</string>
+    <plurals name="unlock_summary">
+        <item quantity="one">%1$d app · %2$s</item>
+        <item quantity="many">%1$d d’apps · %2$s</item>
+        <item quantity="other">%1$d apps · %2$s</item>
+    </plurals>
+    <string name="unlock_never">Pas encore débridé</string>
+    <string name="unlock_missing_permission">Permission DUMP manquante</string>
+    <string name="unlock_missing_permission_hint">Sans elle, les apps ne s’ouvrent pas sur l’écran externe. À accorder une seule fois : elle reste après un redémarrage.</string>
+    <string name="unlock_done">Débridé</string>
+    <string name="unlock_now">Débrider maintenant</string>
+    <string name="unlock_failed">Le dernier débridage a échoué : %1$s</string>
+    <string name="unlock_with_shizuku">Avec Shizuku</string>
+    <string name="unlock_grant_with_shizuku">Accorder avec Shizuku</string>
+    <string name="unlock_shizuku_not_running">Shizuku n’est pas lancé. Démarrez-le dans l’app Shizuku, ou utilisez adb.</string>
+    <string name="unlock_shizuku_failed">Shizuku n’a pas pu accorder la permission.</string>
+    <string name="unlock_with_adb">Avec adb, depuis un ordinateur</string>
+    <string name="unlock_copy">Copier</string>
 </resources>

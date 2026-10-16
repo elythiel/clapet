@@ -59,6 +59,22 @@ class SettingsRepository(context: Context) {
         }
         .distinctUntilChanged()
 
+    val unlockStatus: Flow<UnlockStatus> = dataStore.data
+        .map { prefs ->
+            UnlockStatus(
+                lastAtMillis = prefs[Keys.unlockLastAt] ?: UnlockStatus.Default.lastAtMillis,
+                appCount = prefs[Keys.unlockAppCount] ?: UnlockStatus.Default.appCount,
+            )
+        }
+        .distinctUntilChanged()
+
+    suspend fun recordUnlock(atMillis: Long, appCount: Int) {
+        dataStore.edit {
+            it[Keys.unlockLastAt] = atMillis
+            it[Keys.unlockAppCount] = appCount
+        }
+    }
+
     suspend fun setPseudoHomeEnabled(enabled: Boolean) {
         dataStore.edit {
             it[Keys.pseudoHomeEnabled] = enabled
@@ -131,6 +147,8 @@ class SettingsRepository(context: Context) {
         val wallpaperRevision = longPreferencesKey("wallpaper_revision")
         val pseudoHomeEnabled = booleanPreferencesKey("pseudo_home_enabled")
         val pseudoHomePausedUntil = longPreferencesKey("pseudo_home_paused_until")
+        val unlockLastAt = longPreferencesKey("unlock_last_at")
+        val unlockAppCount = intPreferencesKey("unlock_app_count")
     }
 
     private companion object {

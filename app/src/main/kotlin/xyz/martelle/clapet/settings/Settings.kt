@@ -38,3 +38,11 @@ data class PseudoHomeSettings(val enabled: Boolean, val pausedUntilMillis: Long)
         val Default = PseudoHomeSettings(enabled = true, pausedUntilMillis = 0L)
     }
 }
+
+/** Last successful cover allow-list replay; [lastAtMillis] is 0 until one has happened. */
+@Immutable
+data class UnlockStatus(val lastAtMillis: Long, val appCount: Int) {
+    companion object {
+        val Default = UnlockStatus(lastAtMillis = 0L, appCount = 0)
+    }
+}

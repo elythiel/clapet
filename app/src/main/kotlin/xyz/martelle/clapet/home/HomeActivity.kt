@@ -25,6 +25,7 @@ import xyz.martelle.clapet.R
 import xyz.martelle.clapet.cover.coverGeometry
 import xyz.martelle.clapet.cover.rememberCoverGeometry
 import xyz.martelle.clapet.settings.SettingsActivity
+import xyz.martelle.clapet.coverUnlock
 import xyz.martelle.clapet.settingsRepository
 import xyz.martelle.clapet.theme.ClapetTheme
 
@@ -42,6 +43,8 @@ class HomeActivity : ComponentActivity() {
         // Our 100 ms fade for every opening, whoever the caller is (Android 14+).
         overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, R.anim.home_fade_in, R.anim.home_stay)
         enableEdgeToEdge()
+        // The allow list may be stale (apps installed while the process was dead): replay it.
+        coverUnlock.requestUnlock()
         val settings = settingsRepository
         setContent {
             NavigationBackHandler(

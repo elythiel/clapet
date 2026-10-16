@@ -57,4 +57,27 @@
     <string name="pseudo_home_off">Xiaomi cover home, as shipped</string>
     <!-- Time the pause ends, e.g. 19:45. -->
     <string name="pseudo_home_paused">Paused until %1$s</string>
+
+    <!-- Cover-screen unlock -->
+    <string name="settings_unlock">Cover screen</string>
+    <string name="unlock_subtitle">Lets every app open on the cover screen</string>
+    <!-- Number of apps, then date and time of the last unlock. -->
+    <plurals name="unlock_summary">
+        <item quantity="one">%1$d app · %2$s</item>
+        <item quantity="other">%1$d apps · %2$s</item>
+    </plurals>
+    <string name="unlock_never">Not unlocked yet</string>
+    <string name="unlock_missing_permission">DUMP permission missing</string>
+    <string name="unlock_missing_permission_hint">Without it, apps cannot open on the cover screen. Grant it once: it stays after a reboot.</string>
+    <string name="unlock_done">Unlocked</string>
+    <string name="unlock_now">Unlock now</string>
+    <!-- Technical reason the unlock failed. -->
+    <string name="unlock_failed">The last unlock failed: %1$s</string>
+    <string name="unlock_with_shizuku">With Shizuku</string>
+    <string name="unlock_grant_with_shizuku">Grant with Shizuku</string>
+    <string name="unlock_shizuku_not_running">Shizuku is not running. Start it in the Shizuku app, or use adb.</string>
+    <string name="unlock_shizuku_failed">Shizuku could not grant the permission.</string>
+    <string name="unlock_with_adb">With adb, from a computer</string>
+    <string name="unlock_adb_command" translatable="false">adb shell pm grant xyz.martelle.clapet android.permission.DUMP</string>
+    <string name="unlock_copy">Copy</string>
 </resources>

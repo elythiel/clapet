@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Cover-screen allow list (window dump command). A development permission, granted
+         once through Shizuku or `adb shell pm grant`; it survives reboots. -->
+    <uses-permission
+        android:name="android.permission.DUMP"
+        tools:ignore="ProtectedPermissions" />
+    <!-- The allow list must include every package, not only launcher apps: system screens
+         opened by apps (photo picker, permission prompts) are refused on the cover otherwise. -->
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+    <!-- The allow list is lost at every reboot and replayed at boot. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- A launcher must see every launchable app (package visibility, Android 11+). -->
     <queries>
@@ -83,6 +97,25 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/cover_home_service" />
         </service>
+
+        <!-- Protected system broadcasts only: exported, but no app can send them. -->
+        <receiver
+            android:name=".unlock.UnlockReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Shizuku hands its binder to Clapet through this provider (as its documentation requires). -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:enabled="true"
+            android:exported="true"
+            android:multiprocess="false"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
     </application>
 
 </manifest>

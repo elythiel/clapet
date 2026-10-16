@@ -71,6 +71,7 @@ internal fun SettingsMenu(
     accent: AccentSettings,
     wallpaper: WallpaperSettings,
     pseudoHome: PseudoHomeSettings,
+    unlock: UnlockUiState,
     appInfo: AppInfo,
     onPseudoHomeEnabledChange: (Boolean) -> Unit,
     onOpen: (SettingsPage) -> Unit,
@@ -85,6 +86,17 @@ internal fun SettingsMenu(
                 checked = pseudoHome.enabled,
                 onCheckedChange = onPseudoHomeEnabledChange,
             )
+            HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+            SettingsEntry(
+                icon = R.drawable.ic_cover_unlock,
+                title = stringResource(R.string.settings_unlock),
+                summary = unlockSummary(unlock),
+                onClick = { onOpen(SettingsPage.Unlock) },
+            ) {
+                if (!unlock.hasDumpPermission) {
+                    Box(Modifier.size(8.dp).background(MaterialTheme.colorScheme.error, CircleShape))
+                }
+            }
         }
         Spacer(Modifier.height(12.dp))
         SettingsGroup {

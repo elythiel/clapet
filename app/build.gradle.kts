@@ -18,6 +18,8 @@ android {
 
     buildFeatures {
         compose = true
+        // IShellService, the Shizuku user service interface.
+        aidl = true
     }
 
     compileOptions {
@@ -36,6 +38,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigationevent.compose)
     implementation(libs.colorpicker.compose)
+    implementation(libs.shizuku.api)
+    implementation(libs.shizuku.provider)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)

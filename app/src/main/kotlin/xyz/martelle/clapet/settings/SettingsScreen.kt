@@ -38,9 +38,12 @@ class SettingsActions(
     val onWallpaperDimChange: (Int) -> Unit,
     /** Returns false when the picked image cannot be used. */
     val importWallpaper: suspend (Uri) -> Boolean,
+    val onUnlockNow: () -> Unit,
+    /** Returns false when Shizuku could not grant DUMP. */
+    val grantDumpWithShizuku: suspend () -> Boolean,
 )
 
-enum class SettingsPage { Menu, Accent, Wallpaper }
+enum class SettingsPage { Menu, Unlock, Accent, Wallpaper }
 
 /** The wallpaper is blurred behind every settings page; Material cards sit on top. */
 private val SettingsBlur = 22.dp
@@ -53,6 +56,7 @@ fun SettingsScreen(
     accent: AccentSettings,
     wallpaper: WallpaperSettings,
     pseudoHome: PseudoHomeSettings,
+    unlock: UnlockUiState,
     wallpaperFile: File,
     geometry: CoverGeometry?,
     appInfo: AppInfo,
@@ -80,10 +84,12 @@ fun SettingsScreen(
                     accent = accent,
                     wallpaper = wallpaper,
                     pseudoHome = pseudoHome,
+                    unlock = unlock,
                     appInfo = appInfo,
                     onPseudoHomeEnabledChange = actions.onPseudoHomeEnabledChange,
                     onOpen = { page = it },
                 )
+                SettingsPage.Unlock -> UnlockPage(unlock, actions.onUnlockNow, actions.grantDumpWithShizuku)
                 SettingsPage.Accent -> AccentPage(accent, actions.onAccentChange)
                 SettingsPage.Wallpaper -> WallpaperPage(wallpaper, actions)
             }
