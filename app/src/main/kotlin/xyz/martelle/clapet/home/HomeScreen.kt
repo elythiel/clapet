@@ -27,6 +27,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -155,6 +156,8 @@ fun HomeScreen(
     var focusedSection by remember { mutableStateOf<Char?>(null) }
     // The app whose panel is open (its actions and notifications), by package name.
     var unfolded by remember { mutableStateOf<String?>(null) }
+    // The vertical center, on screen, of the row the panel was opened from: it opens there.
+    var unfoldedAt by remember { mutableFloatStateOf(0f) }
     val unfoldedApp = unfolded?.let { pkg -> apps.firstOrNull { it.component.packageName == pkg } }
     // An app removed while its panel is open closes it.
     LaunchedEffect(unfolded, unfoldedApp == null) {
@@ -220,7 +223,10 @@ fun HomeScreen(
             actions.onAddFavorite,
             actions.onRemoveFavorite,
             actions.onMoveFavorite,
-            onOpenPanel = { app -> unfolded = app.component.packageName },
+            onOpenPanel = { app, centerY ->
+                unfoldedAt = centerY
+                unfolded = app.component.packageName
+            },
         )
     }
 
@@ -366,6 +372,7 @@ fun HomeScreen(
                 NotificationsPanel(
                     app = unfoldedApp,
                     notifications = notifications[unfoldedApp.component.packageName],
+                    anchorY = unfoldedAt,
                     actions = notificationActions,
                     onDismiss = { unfolded = null },
                     isFavorite = unfoldedApp.key in favoriteKeys,

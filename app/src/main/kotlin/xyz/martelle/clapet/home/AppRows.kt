@@ -41,6 +41,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
@@ -81,7 +83,7 @@ class AppActions(
     val onRemoveFavorite: (AppEntry) -> Unit,
     val onMoveFavorite: (from: Int, to: Int) -> Unit,
     /** Opens the app's panel: its actions and notifications (long press, or swipe right when it has some). */
-    val onOpenPanel: (AppEntry) -> Unit = {},
+    val onOpenPanel: (app: AppEntry, centerY: Float) -> Unit = { _, _ -> },
 )
 
 /**
@@ -121,8 +123,11 @@ fun FavoritesList(
 
     Column(modifier) {
         favorites.forEachIndexed { index, app ->
+            // Where the row sits on screen, for its panel to open on it.
+            val rowCenter = remember(app.key) { mutableFloatStateOf(0f) }
             Box(
                 Modifier
+                    .onGloballyPositioned { rowCenter.floatValue = it.boundsInWindow().center.y }
                     .zIndex(if (dragging == index) 1f else 0f)
                     // Read at layout time: the drag moves rows without recomposing them.
                     .offset {
@@ -138,7 +143,7 @@ fun FavoritesList(
                     }
                     .semantics {
                         onLongClick {
-                            actions.onOpenPanel(app)
+                            actions.onOpenPanel(app, rowCenter.floatValue)
                             true
                         }
                         customActions = listOfNotNull(
@@ -161,7 +166,7 @@ fun FavoritesList(
                     onClick = { actions.onLaunch(app) },
                     onLongClick = null,
                     notifications = appNotifications,
-                    onSwipe = { actions.onOpenPanel(app) },
+                    onSwipe = { centerY -> actions.onOpenPanel(app, centerY) },
                     // Inside the click handler: it sees, and consumes, the release of a drag first.
                     gestures = Modifier.pointerInput(app.key) {
                         detectDragGesturesAfterLongPress(
@@ -180,7 +185,11 @@ fun FavoritesList(
                             onDragEnd = {
                                 val from = dragging
                                 if (from != null) {
-                                    if (abs(dragOffset) < touchSlop) actions.onOpenPanel(app) else actions.onMoveFavorite(from, targetOf(from))
+                                    if (abs(dragOffset) < touchSlop) {
+                                        actions.onOpenPanel(app, rowCenter.floatValue)
+                                    } else {
+                                        actions.onMoveFavorite(from, targetOf(from))
+                                    }
                                 }
                                 dragging = null
                                 dragOffset = 0f
@@ -251,9 +260,9 @@ fun AllApps(
                     iconSize = 24.dp,
                     labelSize = 17.sp,
                     onClick = { actions.onLaunch(app) },
-                    onLongClick = { actions.onOpenPanel(app) },
+                    onLongClick = { centerY -> actions.onOpenPanel(app, centerY) },
                     notifications = notifications[app.component.packageName],
-                    onSwipe = { actions.onOpenPanel(app) },
+                    onSwipe = { centerY -> actions.onOpenPanel(app, centerY) },
                     // Tighter than the favorites, to show more of the list; still a comfortable target.
                     modifier = sectionAlpha.heightIn(min = 40.dp),
                 )
@@ -330,13 +339,16 @@ private fun AppRow(
     iconSize: Dp,
     labelSize: TextUnit,
     onClick: () -> Unit,
-    onLongClick: (() -> Unit)?,
+    /** Given the row's vertical center on screen, where the panel then opens. */
+    onLongClick: ((centerY: Float) -> Unit)?,
     modifier: Modifier = Modifier,
     gestures: Modifier = Modifier,
     notifications: AppNotifications? = null,
     /** Swiping right, only offered while the app has notifications. */
-    onSwipe: () -> Unit = {},
+    onSwipe: (centerY: Float) -> Unit = {},
 ) {
+    // Where the row sits on screen, for the panel to open on it. Read in callbacks only.
+    val centerY = remember { mutableFloatStateOf(0f) }
     val accent = LocalClapetColors.current.accent
     val swipe = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
@@ -351,7 +363,8 @@ private fun AppRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .onGloballyPositioned { centerY.floatValue = it.boundsInWindow().center.y }
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick?.let { { it(centerY.floatValue) } })
             .then(gestures)
             .then(
                 if (notifications == null) {
@@ -362,7 +375,7 @@ private fun AppRow(
                             onDragEnd = {
                                 if (swipe.value >= thresholdPx) {
                                     haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                                    currentOnSwipe()
+                                    currentOnSwipe(centerY.floatValue)
                                 }
                                 scope.launch { swipe.animateTo(0f) }
                             },

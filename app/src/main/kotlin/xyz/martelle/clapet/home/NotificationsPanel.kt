@@ -2,6 +2,7 @@ package xyz.martelle.clapet.home
 
 import android.text.format.DateFormat
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,8 +26,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,6 +45,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.unit.Dp
+import kotlin.math.roundToInt
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -95,6 +99,8 @@ fun NotificationsPanel(
     app: AppEntry,
     /** Null when the app has none: the panel then only holds its actions. */
     notifications: AppNotifications?,
+    /** Vertical center, on screen, of the row it was opened from: the panel centers on it. */
+    anchorY: Float,
     actions: NotificationActions,
     onDismiss: () -> Unit,
     isFavorite: Boolean,
@@ -105,6 +111,9 @@ fun NotificationsPanel(
 ) {
     var replyingTo by remember { mutableStateOf<String?>(null) }
     val closeLabel = stringResource(R.string.notifications_close)
+    // Opens from its center: the content stays in place and is uncovered upwards and downwards.
+    val reveal = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { reveal.animateTo(1f, tween(RevealMillis, easing = FastOutSlowInEasing)) }
     Box(
         modifier
             .fillMaxSize()
@@ -115,13 +124,22 @@ fun NotificationsPanel(
     ) {
         Column(
             Modifier
-                // Off the screen's edges, which round off on the cover screen.
-                .padding(start = PanelInset, top = 4.dp, bottom = PanelInset)
+                // Under the finger, kept off the screen's edges (they round off on the cover screen).
+                .centeredOn(anchorY, top = 4.dp, bottom = PanelInset)
+                .padding(start = PanelInset)
+                .drawWithContent {
+                    val half = size.height / 2f
+                    val shown = half * reveal.value
+                    // Wide enough for the backdrop's overhang under the cameras.
+                    clipRect(left = -size.width, top = half - shown, right = size.width * 2, bottom = half + shown) {
+                        this@drawWithContent.drawContent()
+                    }
+                }
                 // As tall as its content. Wider than the column: past the cameras' edge, so the
                 // cards keep room on the right and the corners land under the lenses.
                 .drawBehind {
                     drawRoundRect(
-                        Color.Black.copy(alpha = 0.72f),
+                        Color.Black.copy(alpha = PanelOpacity),
                         size = Size(size.width + BackdropOverhang.toPx(), size.height),
                         cornerRadius = CornerRadius(PanelCorner.toPx()),
                     )
@@ -212,6 +230,29 @@ private fun PanelHeader(
 private val HeaderButton = 44.dp
 private val HeaderOverhang = 16.dp
 
+/** Nearly opaque: over the home, the rows under the panel must not show through its text. */
+private const val PanelOpacity = 0.97f
+
+/** How long the panel takes to open out from its center. */
+private const val RevealMillis = 180
+
+/**
+ * Places the content (as tall as it needs, within the room) with its vertical center on
+ * [anchorY], a position on screen, then slides it back inside if it would run past [top] or
+ * [bottom].
+ */
+private fun Modifier.centeredOn(anchorY: Float, top: Dp, bottom: Dp): Modifier = layout { measurable, constraints ->
+    val topPx = top.roundToPx()
+    val bottomPx = bottom.roundToPx()
+    val room = (constraints.maxHeight - topPx - bottomPx).coerceAtLeast(0)
+    val placeable = measurable.measure(constraints.copy(minHeight = 0, maxHeight = room))
+    layout(constraints.maxWidth, constraints.maxHeight) {
+        val origin = coordinates?.positionInWindow()?.y ?: 0f
+        val wanted = (anchorY - origin - placeable.height / 2f).roundToInt()
+        placeable.place(0, wanted.coerceIn(topPx, (constraints.maxHeight - bottomPx - placeable.height).coerceAtLeast(topPx)))
+    }
+}
+
 /** Same start as the favorites and the list. */
 private val ListEdgeForPanel = 12.dp
 
@@ -279,38 +320,46 @@ private fun NotificationCard(
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(onClick = onOpen)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                notification.title,
-                color = TextPrimary,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            Text(time, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+        // Compact, so two or three fit under the finger: the reply is an icon beside the text.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        notification.title,
+                        color = TextPrimary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(time, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                }
+                if (notification.text.isNotBlank()) {
+                    Text(
+                        notification.text,
+                        color = Color(0xFFD9D5CE),
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            if (notification.canReply && !replying) {
+                IconButton(onClick = onStartReply, modifier = Modifier.padding(start = 4.dp)) {
+                    Icon(
+                        painterResource(R.drawable.ic_reply),
+                        contentDescription = stringResource(R.string.notification_reply),
+                        tint = colors.accent,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
         }
-        if (notification.text.isNotBlank()) {
-            Text(
-                notification.text,
-                color = Color(0xFFD9D5CE),
-                fontSize = 13.sp,
-                lineHeight = 18.sp,
-                maxLines = 4,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        when {
-            replying -> ReplyField(onSend)
-            notification.canReply -> Button(
-                onClick = onStartReply,
-                colors = ButtonDefaults.buttonColors(containerColor = colors.accent, contentColor = colors.onAccent),
-                contentPadding = PaddingValues(horizontal = 14.dp),
-            ) { Text(stringResource(R.string.notification_reply), fontSize = 12.sp, fontWeight = FontWeight.Bold) }
-        }
+        if (replying) ReplyField(onSend)
     }
     }
 }
