@@ -57,6 +57,8 @@ fun HomeScreen(
     shortcuts: List<Shortcut>,
     onShortcutClick: (Shortcut) -> Unit,
     onOpenSettings: () -> Unit,
+    /** Null when the pseudo-home is off: there is nothing to pause. */
+    onPause: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     var menuAt by remember { mutableStateOf<Offset?>(null) }
@@ -92,6 +94,12 @@ fun HomeScreen(
             onOpenSettings = {
                 menuAt = null
                 onOpenSettings()
+            },
+            onPause = onPause?.let { pause ->
+                {
+                    menuAt = null
+                    pause()
+                }
             },
         )
     }
@@ -133,6 +141,7 @@ private fun HomeMenu(
     maxAnchorX: Int?,
     onDismiss: () -> Unit,
     onOpenSettings: () -> Unit,
+    onPause: (() -> Unit)?,
 ) {
     val menuWidthPx = with(LocalDensity.current) { MenuWidth.roundToPx() }
     val x = anchor?.x?.roundToInt() ?: 0
@@ -143,6 +152,12 @@ private fun HomeMenu(
                 text = { Text(stringResource(R.string.menu_settings), style = MaterialTheme.typography.bodyLarge) },
                 onClick = onOpenSettings,
             )
+            if (onPause != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.menu_pause), style = MaterialTheme.typography.bodyLarge) },
+                    onClick = onPause,
+                )
+            }
         }
     }
 }

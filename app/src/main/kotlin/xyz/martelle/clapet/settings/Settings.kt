@@ -25,3 +25,16 @@ data class WallpaperSettings(val source: WallpaperSource, val dimPercent: Int, v
         val Default = WallpaperSettings(WallpaperSource.Black, dimPercent = 45, imageRevision = 0L)
     }
 }
+
+/**
+ * Whether Clapet replaces FlipLauncher on the cover screen. [pausedUntilMillis] is a
+ * wall-clock time (System.currentTimeMillis) until which the service stays idle; 0 = not paused.
+ */
+@Immutable
+data class PseudoHomeSettings(val enabled: Boolean, val pausedUntilMillis: Long) {
+    fun isActiveAt(nowMillis: Long): Boolean = enabled && nowMillis >= pausedUntilMillis
+
+    companion object {
+        val Default = PseudoHomeSettings(enabled = true, pausedUntilMillis = 0L)
+    }
+}

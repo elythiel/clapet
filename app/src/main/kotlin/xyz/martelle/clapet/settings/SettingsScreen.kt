@@ -32,6 +32,7 @@ data class AppInfo(val versionName: String, val packageName: String)
 /** Every change the settings screens can request. Persisted by the owner, observed back as state. */
 @Immutable
 class SettingsActions(
+    val onPseudoHomeEnabledChange: (Boolean) -> Unit,
     val onAccentChange: (AccentMode, Int) -> Unit,
     val onWallpaperSourceChange: (WallpaperSource) -> Unit,
     val onWallpaperDimChange: (Int) -> Unit,
@@ -51,6 +52,7 @@ private const val SettingsMinDimPercent = 60
 fun SettingsScreen(
     accent: AccentSettings,
     wallpaper: WallpaperSettings,
+    pseudoHome: PseudoHomeSettings,
     wallpaperFile: File,
     geometry: CoverGeometry?,
     appInfo: AppInfo,
@@ -77,7 +79,9 @@ fun SettingsScreen(
                 SettingsPage.Menu -> SettingsMenu(
                     accent = accent,
                     wallpaper = wallpaper,
+                    pseudoHome = pseudoHome,
                     appInfo = appInfo,
+                    onPseudoHomeEnabledChange = actions.onPseudoHomeEnabledChange,
                     onOpen = { page = it },
                 )
                 SettingsPage.Accent -> AccentPage(accent, actions.onAccentChange)

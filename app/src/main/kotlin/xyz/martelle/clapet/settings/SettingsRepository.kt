@@ -6,6 +6,7 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -48,6 +49,27 @@ class SettingsRepository(context: Context) {
             )
         }
         .distinctUntilChanged()
+
+    val pseudoHome: Flow<PseudoHomeSettings> = dataStore.data
+        .map { prefs ->
+            PseudoHomeSettings(
+                enabled = prefs[Keys.pseudoHomeEnabled] ?: PseudoHomeSettings.Default.enabled,
+                pausedUntilMillis = prefs[Keys.pseudoHomePausedUntil] ?: PseudoHomeSettings.Default.pausedUntilMillis,
+            )
+        }
+        .distinctUntilChanged()
+
+    suspend fun setPseudoHomeEnabled(enabled: Boolean) {
+        dataStore.edit {
+            it[Keys.pseudoHomeEnabled] = enabled
+            // Switching the pseudo-home back on also ends any pause.
+            it[Keys.pseudoHomePausedUntil] = 0L
+        }
+    }
+
+    suspend fun pausePseudoHome(untilMillis: Long) {
+        dataStore.edit { it[Keys.pseudoHomePausedUntil] = untilMillis }
+    }
 
     suspend fun setAccent(mode: AccentMode, color: Int) {
         dataStore.edit { prefs ->
@@ -107,6 +129,8 @@ class SettingsRepository(context: Context) {
         val wallpaperSource = stringPreferencesKey("wallpaper_source")
         val wallpaperDim = intPreferencesKey("wallpaper_dim")
         val wallpaperRevision = longPreferencesKey("wallpaper_revision")
+        val pseudoHomeEnabled = booleanPreferencesKey("pseudo_home_enabled")
+        val pseudoHomePausedUntil = longPreferencesKey("pseudo_home_paused_until")
     }
 
     private companion object {

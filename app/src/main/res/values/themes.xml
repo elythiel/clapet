@@ -11,5 +11,20 @@
     <style name="Theme.Clapet.Home">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@style/Animation.Clapet.Home</item>
+    </style>
+
+    <!-- The 100 ms fade, whatever opens the home (service, launcher icon, back from an app). -->
+    <style name="Animation.Clapet.Home" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/home_fade_in</item>
+        <item name="android:activityOpenExitAnimation">@anim/home_stay</item>
+        <item name="android:taskOpenEnterAnimation">@anim/home_fade_in</item>
+        <item name="android:taskOpenExitAnimation">@anim/home_stay</item>
+        <item name="android:taskToFrontEnterAnimation">@anim/home_fade_in</item>
+        <item name="android:taskToFrontExitAnimation">@anim/home_stay</item>
+        <item name="android:wallpaperOpenEnterAnimation">@anim/home_fade_in</item>
+        <item name="android:wallpaperOpenExitAnimation">@anim/home_stay</item>
+        <item name="android:wallpaperIntraOpenEnterAnimation">@anim/home_fade_in</item>
+        <item name="android:wallpaperIntraOpenExitAnimation">@anim/home_stay</item>
     </style>
 </resources>

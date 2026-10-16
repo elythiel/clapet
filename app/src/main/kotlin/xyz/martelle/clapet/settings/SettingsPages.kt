@@ -1,5 +1,6 @@
 package xyz.martelle.clapet.settings
 
+import android.text.format.DateFormat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
@@ -33,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -43,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -52,7 +55,9 @@ import androidx.compose.ui.unit.dp
 import com.github.skydoves.colorpicker.compose.BrightnessSlider
 import com.github.skydoves.colorpicker.compose.HsvColorPicker
 import com.github.skydoves.colorpicker.compose.rememberColorPickerController
+import java.util.Date
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
@@ -65,12 +70,23 @@ import xyz.martelle.clapet.theme.LocalClapetColors
 internal fun SettingsMenu(
     accent: AccentSettings,
     wallpaper: WallpaperSettings,
+    pseudoHome: PseudoHomeSettings,
     appInfo: AppInfo,
+    onPseudoHomeEnabledChange: (Boolean) -> Unit,
     onOpen: (SettingsPage) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize().padding(horizontal = 12.dp)) {
         PageTitle(stringResource(R.string.settings_title))
+        SettingsGroup {
+            SwitchEntry(
+                title = stringResource(R.string.settings_pseudo_home),
+                summary = pseudoHomeSummary(pseudoHome),
+                checked = pseudoHome.enabled,
+                onCheckedChange = onPseudoHomeEnabledChange,
+            )
+        }
+        Spacer(Modifier.height(12.dp))
         SettingsGroup {
             SettingsEntry(
                 icon = R.drawable.ic_palette,
@@ -94,6 +110,25 @@ internal fun SettingsMenu(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 8.dp, bottom = 16.dp),
+        )
+    }
+}
+
+/** Recomposes when a pause ends, so the summary never claims a pause that is over. */
+@Composable
+private fun pseudoHomeSummary(settings: PseudoHomeSettings): String {
+    val now by produceState(System.currentTimeMillis(), settings.pausedUntilMillis) {
+        val remaining = settings.pausedUntilMillis - System.currentTimeMillis()
+        if (remaining > 0) delay(remaining)
+        value = System.currentTimeMillis()
+    }
+    val context = LocalContext.current
+    return when {
+        !settings.enabled -> stringResource(R.string.pseudo_home_off)
+        settings.isActiveAt(now) -> stringResource(R.string.pseudo_home_on)
+        else -> stringResource(
+            R.string.pseudo_home_paused,
+            DateFormat.getTimeFormat(context).format(Date(settings.pausedUntilMillis)),
         )
     }
 }

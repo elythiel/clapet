@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Only FlipLauncher's window changes. Its window content (limited to com.miui.fliphome)
+     tells its home apart from its recents, which live in the same activity. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagReportViewIds|flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/cover_home_service_description"
+    android:isAccessibilityTool="false"
+    android:notificationTimeout="0"
+    android:packageNames="com.miui.fliphome" />

@@ -31,6 +31,7 @@ class SettingsActivity : ComponentActivity() {
         )
         // Writes belong to the activity, not to the screen being shown.
         val actions = SettingsActions(
+            onPseudoHomeEnabledChange = { lifecycleScope.launch { settings.setPseudoHomeEnabled(it) } },
             onAccentChange = { mode, color -> lifecycleScope.launch { settings.setAccent(mode, color) } },
             onWallpaperSourceChange = { lifecycleScope.launch { settings.setWallpaperSource(it) } },
             onWallpaperDimChange = { lifecycleScope.launch { settings.setWallpaperDim(it) } },
@@ -40,11 +41,13 @@ class SettingsActivity : ComponentActivity() {
         setContent {
             val accent by settings.accent.collectAsStateWithLifecycle(initialValue = null)
             val wallpaper by settings.wallpaper.collectAsStateWithLifecycle(initialValue = null)
+            val pseudoHome by settings.pseudoHome.collectAsStateWithLifecycle(initialValue = null)
             val geometry = rememberCoverGeometry()
 
             val currentAccent = accent
             val currentWallpaper = wallpaper
-            if (currentAccent == null || currentWallpaper == null) {
+            val currentPseudoHome = pseudoHome
+            if (currentAccent == null || currentWallpaper == null || currentPseudoHome == null) {
                 Box(Modifier.fillMaxSize().background(Color.Black))
                 return@setContent
             }
@@ -52,6 +55,7 @@ class SettingsActivity : ComponentActivity() {
                 SettingsScreen(
                     accent = currentAccent,
                     wallpaper = currentWallpaper,
+                    pseudoHome = currentPseudoHome,
                     wallpaperFile = settings.wallpaperFile,
                     geometry = geometry,
                     appInfo = appInfo,
