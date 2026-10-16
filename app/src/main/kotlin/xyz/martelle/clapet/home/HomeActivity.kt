@@ -10,7 +10,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -21,8 +20,8 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import xyz.martelle.clapet.R
 import xyz.martelle.clapet.cover.coverGeometry
 import xyz.martelle.clapet.cover.rememberCoverGeometry
@@ -31,6 +30,8 @@ import xyz.martelle.clapet.coverUnlock
 import xyz.martelle.clapet.health.HealthChecker
 import xyz.martelle.clapet.health.HealthReport
 import xyz.martelle.clapet.health.openHealthFix
+import xyz.martelle.clapet.apps.Favorites
+import xyz.martelle.clapet.installedApps
 import xyz.martelle.clapet.settingsRepository
 import xyz.martelle.clapet.theme.ClapetTheme
 
@@ -49,6 +50,17 @@ class HomeActivity : ComponentActivity() {
         coverUnlock.requestUnlock()
         val settings = settingsRepository
         val healthChecker = HealthChecker(this)
+        val appList = installedApps.also { it.start() }
+        val updateFavorites: ((List<String>) -> List<String>) -> Unit = { transform ->
+            lifecycleScope.launch { settings.updateFavorites(transform) }
+        }
+        val appActions = AppActions(
+            onLaunch = appList::launch,
+            onAppInfo = appList::openAppInfo,
+            onAddFavorite = { app -> updateFavorites { Favorites.add(it, app.key) } },
+            onRemoveFavorite = { app -> updateFavorites { Favorites.remove(it, app.key) } },
+            onMoveFavorite = { from, to -> updateFavorites { Favorites.move(it, from, to) } },
+        )
         setContent {
             NavigationBackHandler(
                 state = rememberNavigationEventState(currentInfo = NavigationEventInfo.None),
@@ -57,9 +69,10 @@ class HomeActivity : ComponentActivity() {
 
             val accent by settings.accent.collectAsStateWithLifecycle(initialValue = null)
             val wallpaper by settings.wallpaper.collectAsStateWithLifecycle(initialValue = null)
-            val shortcuts by produceState(emptyList<Shortcut>()) {
-                value = withContext(Dispatchers.Default) { loadShortcuts(this@HomeActivity, TemporaryShortcutQueries) }
-            }
+            val apps by appList.apps.collectAsStateWithLifecycle()
+            val favoriteKeys by settings.favorites.collectAsStateWithLifecycle(initialValue = emptyList())
+            val allApps = apps.orEmpty()
+            val favorites = remember(favoriteKeys, allApps) { Favorites.resolve(favoriteKeys, allApps) { it.key } }
             val geometry = rememberCoverGeometry()
             // Settings can break outside the app (an HyperOS update, for instance): re-check on every return.
             var health by remember { mutableStateOf<HealthReport?>(null) }
@@ -80,8 +93,10 @@ class HomeActivity : ComponentActivity() {
                     geometry = geometry,
                     wallpaper = currentWallpaper,
                     wallpaperFile = settings.wallpaperFile,
-                    shortcuts = shortcuts,
-                    onShortcutClick = { launch(it) },
+                    apps = allApps,
+                    favorites = favorites,
+                    favoriteKeys = favoriteKeys,
+                    actions = appActions,
                     onOpenSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
                     healthAlert = health?.firstBroken,
                     onHealthAlertClick = { openHealthFix(it) },

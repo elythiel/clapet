@@ -108,4 +108,19 @@
     <string name="health_xiaomi_home_open">Open the Xiaomi home</string>
     <!-- Name of the setting to fix, e.g. "Battery". -->
     <string name="home_health_alert">Setting to fix: %1$s</string>
+
+    <!-- Favorites and alphabet -->
+    <string name="favorites_empty">Long-press an app in the alphabet to add it here</string>
+    <string name="favorites_full">Favorites are full (5)</string>
+    <string name="app_menu_add_favorite">Add to favorites</string>
+    <string name="app_menu_remove_favorite">Remove from favorites</string>
+    <string name="app_menu_info">App info</string>
+    <string name="app_move_up">Move up</string>
+    <string name="app_move_down">Move down</string>
+    <string name="alphabet_index">Alphabetical index</string>
+    <!-- Letter, then number of apps under it. -->
+    <plurals name="letter_header">
+        <item quantity="one">%1$s · %2$d app</item>
+        <item quantity="other">%1$s · %2$d apps</item>
+    </plurals>
 </resources>

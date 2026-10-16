@@ -68,6 +68,19 @@ class SettingsRepository(context: Context) {
         }
         .distinctUntilChanged()
 
+    /** Ordered app keys (flattened components); stored as one line per key to keep the order. */
+    val favorites: Flow<List<String>> = dataStore.data
+        .map { prefs -> prefs[Keys.favorites]?.lines()?.filter { it.isNotBlank() }.orEmpty() }
+        .distinctUntilChanged()
+
+    /** Read-modify-write in one DataStore transaction, so two quick changes never overwrite each other. */
+    suspend fun updateFavorites(transform: (List<String>) -> List<String>) {
+        dataStore.edit { prefs ->
+            val current = prefs[Keys.favorites]?.lines()?.filter { it.isNotBlank() }.orEmpty()
+            prefs[Keys.favorites] = transform(current).joinToString("\n")
+        }
+    }
+
     /** False until the "Keep Clapet running" page has been shown once (first launch). */
     val onboardingSeen: Flow<Boolean> = dataStore.data
         .map { it[Keys.onboardingSeen] ?: false }
@@ -159,6 +172,7 @@ class SettingsRepository(context: Context) {
         val unlockLastAt = longPreferencesKey("unlock_last_at")
         val unlockAppCount = intPreferencesKey("unlock_app_count")
         val onboardingSeen = booleanPreferencesKey("onboarding_seen")
+        val favorites = stringPreferencesKey("favorites")
     }
 
     private companion object {
