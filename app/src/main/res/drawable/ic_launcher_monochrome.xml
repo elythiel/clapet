@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed icons: one color, tinted by the system. A single color cannot carve the leading, so the
+     three discs become rings around a solid heart. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="3.5" android:pathData="M38,42a16,16 0 1,0 32,0a16,16 0 1,0 -32,0z" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="3.5" android:pathData="M27.5,60a16,16 0 1,0 32,0a16,16 0 1,0 -32,0z" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="3.5" android:pathData="M48.5,60a16,16 0 1,0 32,0a16,16 0 1,0 -32,0z" />
+    <group>
+        <clip-path android:pathData="M37,42a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+        <group>
+            <clip-path android:pathData="M26.5,60a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+            <path android:fillColor="#FFFFFFFF" android:pathData="M47.5,60a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+        </group>
+    </group>
+</vector>

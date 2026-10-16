@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- « Vitrail »: three discs in the accent palette, each overlap its own shade, a white heart,
+     leading in the background's night blue. Inside the 66 dp safe circle of the 108 dp canvas. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- A (top, pink), B (bottom left, lavender), C (bottom right, blue). -->
+    <path android:fillColor="#FFF4C2D4" android:pathData="M37,42a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+    <path android:fillColor="#FFB9A3F2" android:pathData="M26.5,60a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+    <path android:fillColor="#FF7FA7F5" android:pathData="M47.5,60a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+    <!-- Inside A: A∩B, then A∩C. -->
+    <group>
+        <clip-path android:pathData="M37,42a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+        <path android:fillColor="#FFE08FC8" android:pathData="M26.5,60a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+        <path android:fillColor="#FFC4B8F6" android:pathData="M47.5,60a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+    </group>
+    <!-- Inside B: B∩C. -->
+    <group>
+        <clip-path android:pathData="M26.5,60a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+        <path android:fillColor="#FF7477E3" android:pathData="M47.5,60a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+    </group>
+    <!-- A∩B∩C: the white heart. -->
+    <group>
+        <clip-path android:pathData="M37,42a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+        <group>
+            <clip-path android:pathData="M26.5,60a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+            <path android:fillColor="#FFFFFFFF" android:pathData="M47.5,60a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+        </group>
+    </group>
+    <!-- Leading, the background's color. -->
+    <path android:strokeColor="#FF1C2333" android:strokeWidth="2.2" android:pathData="M37,42a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+    <path android:strokeColor="#FF1C2333" android:strokeWidth="2.2" android:pathData="M26.5,60a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+    <path android:strokeColor="#FF1C2333" android:strokeWidth="2.2" android:pathData="M47.5,60a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z" />
+</vector>
