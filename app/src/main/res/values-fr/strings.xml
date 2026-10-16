@@ -128,5 +128,6 @@
     <string name="header_tomorrow">Demain</string>
     <string name="header_ongoing">En cours</string>
     <string name="header_untitled">Sans titre</string>
+    <string name="header_open_alarms">ouvrir les réveils</string>
     <string name="header_alarm">Réveil à %1$s</string>
 </resources>

@@ -141,6 +141,7 @@
     <string name="header_tomorrow">Tomorrow</string>
     <string name="header_ongoing">Now</string>
     <string name="header_untitled">Untitled</string>
+    <string name="header_open_alarms">open the alarms</string>
     <!-- Read by TalkBack: %1$s is the alarm time, possibly with its day. -->
     <string name="header_alarm">Alarm at %1$s</string>
 </resources>

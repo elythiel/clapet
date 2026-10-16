@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.provider.AlarmClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -116,6 +117,15 @@ class HomeActivity : ComponentActivity() {
                     actions = appActions,
                     onOpenSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
                     header = header,
+                    onOpenAlarms = {
+                        try {
+                            startActivity(Intent(AlarmClock.ACTION_SHOW_ALARMS))
+                        } catch (e: ActivityNotFoundException) {
+                            // No clock app: the tap does nothing.
+                        } catch (e: SecurityException) {
+                            // A clock app asking for more than SET_ALARM: the tap does nothing either.
+                        }
+                    },
                     onOpenEvent = { event ->
                         try {
                             startActivity(openEventIntent(event))

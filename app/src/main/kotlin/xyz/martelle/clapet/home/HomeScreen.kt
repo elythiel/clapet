@@ -146,6 +146,7 @@ fun HomeScreen(
     /** Null until first read. */
     header: HeaderInfo?,
     onOpenEvent: (UpcomingEvent) -> Unit,
+    onOpenAlarms: () -> Unit,
     /** By package name; empty without notification access. */
     notifications: Map<String, AppNotifications>,
     notificationActions: NotificationActions,
@@ -330,6 +331,7 @@ fun HomeScreen(
                 HomeHeader(
                     header = header,
                     onOpenEvent = onOpenEvent,
+                    onOpenAlarms = onOpenAlarms,
                     reserveTopEnd = healthAlert != null,
                     modifier = Modifier
                         .fillMaxWidth()

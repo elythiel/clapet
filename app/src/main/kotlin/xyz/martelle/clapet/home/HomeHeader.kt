@@ -49,6 +49,12 @@ import xyz.martelle.clapet.theme.TextPrimary
 /** Taller than the mockup's 32 dp, for the thumb, while two still fit in the header. */
 private val EventRowHeight = 36.dp
 
+/**
+ * The date row is a touch target too (it opens the alarms). The whole header must fit its 127 dp:
+ * date 30 + 2 + « À venir » 16 + two events of 36 + the bottom gap of 6 = 126.
+ */
+private val DateRowHeight = 30.dp
+
 /** The date row stops short of the health dot, when one is drawn in the top-right corner. */
 private val HealthDotRoom = 40.dp
 
@@ -66,6 +72,8 @@ private val DateAlarmGap = 10.dp
 fun HomeHeader(
     header: HeaderInfo?,
     onOpenEvent: (UpcomingEvent) -> Unit,
+    /** The date and the alarm open the clock app's alarms. */
+    onOpenAlarms: () -> Unit,
     modifier: Modifier = Modifier,
     /** The health dot is shown: keep its corner free. */
     reserveTopEnd: Boolean = false,
@@ -77,9 +85,18 @@ fun HomeHeader(
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     // Stacked from the bottom, as in Niagara: the date sits right above the favorites, and the
     // events, when there are some, slide in between.
-    Column(modifier.padding(bottom = 8.dp), verticalArrangement = Arrangement.Bottom) {
+    Column(modifier.padding(bottom = 6.dp), verticalArrangement = Arrangement.Bottom) {
         val alarmLabel = header.nextAlarm?.let { formats.alarm(it, showsDay = header.alarmShowsDay) }
-        Box(Modifier.padding(start = 8.dp, end = if (reserveTopEnd) HealthDotRoom else 0.dp)) {
+        val openAlarmsLabel = stringResource(R.string.header_open_alarms)
+        Box(
+            Modifier
+                .padding(end = if (reserveTopEnd) HealthDotRoom else 0.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .clickable(onClickLabel = openAlarmsLabel, onClick = onOpenAlarms)
+                .heightIn(min = DateRowHeight)
+                .padding(horizontal = 8.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DateAlarmGap)) {
                 Text(
                     // Abbreviated (« Ven. 16 oct. »), so it fits beside a far alarm left of the cameras.
@@ -109,7 +126,7 @@ fun HomeHeader(
             }
         }
         if (header.events.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(2.dp))
             Text(
                 stringResource(R.string.header_upcoming),
                 color = LocalClapetColors.current.accent,
