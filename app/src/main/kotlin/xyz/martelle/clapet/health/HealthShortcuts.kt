@@ -15,7 +15,7 @@ import xyz.martelle.clapet.notifications.ClapetNotificationListener
  */
 fun HealthItem.shortcut(context: Context): Intent? = when (this) {
     HealthItem.CoverHome -> Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-    HealthItem.CoverUnlock, HealthItem.RecentsLock, HealthItem.Calendar -> null
+    HealthItem.CoverUnlock, HealthItem.Calendar -> null
     HealthItem.AutoStart ->
         Intent("miui.intent.action.OP_AUTO_START").addCategory(Intent.CATEGORY_DEFAULT).orAppInfo(context)
     HealthItem.Battery -> batteryShortcut(context)

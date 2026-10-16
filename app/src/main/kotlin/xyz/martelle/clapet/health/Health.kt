@@ -1,8 +1,6 @@
 package xyz.martelle.clapet.health
 
 import androidx.compose.runtime.Immutable
-import org.json.JSONArray
-import org.json.JSONException
 
 /** How the permissions page sorts its rows. */
 enum class HealthGroup {
@@ -27,9 +25,6 @@ enum class HealthItem(val required: Boolean, val group: HealthGroup = HealthGrou
     /** No battery restriction, on both the Android and the Xiaomi side. */
     Battery(required = true),
 
-    /** Locking Clapet in recents protects it from "clear all"; nice to have. */
-    RecentsLock(required = false),
-
     /** READ_CALENDAR, for the upcoming events of the header; without it, date and alarm only. */
     Calendar(required = false, group = HealthGroup.Features),
 
@@ -48,23 +43,6 @@ data class HealthReport(val ok: Map<HealthItem, Boolean>) {
 
 /** Formats of the undocumented Xiaomi settings Clapet reads. */
 object XiaomiSettings {
-
-    /** `locked_apps`: `[{"u":0,"pkgs":["a","b"]},{"u":-100,"pkgs":[…]}]`, one entry per user. */
-    fun lockedAppsContain(json: String?, userId: Int, packageName: String): Boolean {
-        if (json.isNullOrBlank()) return false
-        return try {
-            val users = JSONArray(json)
-            (0 until users.length())
-                .map { users.getJSONObject(it) }
-                .filter { it.optInt("u", Int.MIN_VALUE) == userId }
-                .any { entry ->
-                    val packages = entry.optJSONArray("pkgs") ?: return@any false
-                    (0 until packages.length()).any { packages.optString(it) == packageName }
-                }
-        } catch (e: JSONException) {
-            false
-        }
-    }
 
     /** `MILLET_NO_RESTRICT_APP`: comma-separated package names. */
     fun commaListContains(list: String?, packageName: String): Boolean =

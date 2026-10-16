@@ -102,8 +102,6 @@
     <string name="health_auto_start_hint">Xiaomi setting</string>
     <string name="health_battery">Battery</string>
     <string name="health_battery_hint">No restrictions</string>
-    <string name="health_recents_lock">Lock in recents</string>
-    <string name="health_recents_lock_hint">Optional · in recent apps, long-press Clapet, then tap the lock</string>
     <string name="health_calendar">Calendar</string>
     <string name="health_calendar_hint">Upcoming events on the home</string>
     <string name="health_notifications">Notifications</string>

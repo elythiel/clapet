@@ -27,7 +27,6 @@ class HealthChecker(context: Context) {
                 HealthItem.CoverUnlock -> CoverUnlocker(appContext).hasDumpPermission()
                 HealthItem.AutoStart -> isAutoStartAllowed()
                 HealthItem.Battery -> isBatteryUnrestricted()
-                HealthItem.RecentsLock -> isLockedInRecents()
                 HealthItem.Notifications -> appContext.getSystemService(NotificationManager::class.java)
                     .isNotificationListenerAccessGranted(ComponentName(appContext, ClapetNotificationListener::class.java))
                 HealthItem.Calendar ->
@@ -64,19 +63,8 @@ class HealthChecker(context: Context) {
         return android && (xiaomi == null || XiaomiSettings.commaListContains(xiaomi, packageName))
     }
 
-    private fun isLockedInRecents(): Boolean {
-        // AOSP's UserHandle.PER_USER_RANGE: the user id is the uid divided by 100 000.
-        val userId = Process.myUid() / 100_000
-        return XiaomiSettings.lockedAppsContain(
-            Settings.System.getString(appContext.contentResolver, LOCKED_APPS),
-            userId,
-            packageName,
-        )
-    }
-
     private companion object {
         const val MIUI_OP_AUTO_START = 10008
         const val MILLET_NO_RESTRICT_APP = "MILLET_NO_RESTRICT_APP"
-        const val LOCKED_APPS = "locked_apps"
     }
 }

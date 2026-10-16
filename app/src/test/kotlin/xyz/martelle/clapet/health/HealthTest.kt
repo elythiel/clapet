@@ -8,23 +8,6 @@ import org.junit.Test
 
 class HealthTest {
 
-    // Value read on the Mix Flip (HyperOS OS3.0.303).
-    private val lockedApps =
-        """[{"u":0,"pkgs":["fr.martelle.flipspike","com.movix.app"]},{"u":-100,"pkgs":["com.xiaomi.bsgamecenter"]}]"""
-
-    @Test
-    fun `locked apps are read for the current user only`() {
-        assertTrue(XiaomiSettings.lockedAppsContain(lockedApps, userId = 0, packageName = "com.movix.app"))
-        assertFalse(XiaomiSettings.lockedAppsContain(lockedApps, userId = 0, packageName = "com.xiaomi.bsgamecenter"))
-        assertFalse(XiaomiSettings.lockedAppsContain(lockedApps, userId = 0, packageName = "xyz.martelle.clapet"))
-    }
-
-    @Test
-    fun `missing or broken locked apps mean not locked`() {
-        assertFalse(XiaomiSettings.lockedAppsContain(null, userId = 0, packageName = "a"))
-        assertFalse(XiaomiSettings.lockedAppsContain("not json", userId = 0, packageName = "a"))
-    }
-
     @Test
     fun `comma list matches whole package names`() {
         assertTrue(XiaomiSettings.commaListContains("com.a, xyz.martelle.clapet,com.b", "xyz.martelle.clapet"))
@@ -34,12 +17,12 @@ class HealthTest {
     @Test
     fun `the home dot points to the first required setting that is off`() {
         val report = HealthReport(
-            HealthItem.entries.associateWith { it != HealthItem.Battery && it != HealthItem.RecentsLock },
+            HealthItem.entries.associateWith { it != HealthItem.Battery && it != HealthItem.Calendar },
         )
 
         assertEquals(HealthItem.Battery, report.firstBroken)
-        assertEquals(5, report.okCount)
-        assertEquals(7, report.total)
+        assertEquals(4, report.okCount)
+        assertEquals(6, report.total)
     }
 
     @Test

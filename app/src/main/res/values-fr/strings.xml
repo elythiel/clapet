@@ -91,8 +91,6 @@
     <string name="health_auto_start_hint">Réglage Xiaomi</string>
     <string name="health_battery">Batterie</string>
     <string name="health_battery_hint">Aucune restriction</string>
-    <string name="health_recents_lock">Verrou des récents</string>
-    <string name="health_recents_lock_hint">Optionnel · dans les apps récentes, appuyez longuement sur Clapet, puis sur le cadenas</string>
     <string name="health_calendar">Agenda</string>
     <string name="health_calendar_hint">Événements à venir sur l’accueil</string>
     <string name="health_notifications">Notifications</string>
