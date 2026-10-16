@@ -1,10 +1,12 @@
 package xyz.martelle.clapet.settings
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -23,6 +25,7 @@ import kotlinx.coroutines.launch
 import xyz.martelle.clapet.cover.rememberCoverGeometry
 import xyz.martelle.clapet.coverUnlock
 import xyz.martelle.clapet.health.HealthChecker
+import xyz.martelle.clapet.health.HealthItem
 import xyz.martelle.clapet.health.appInfoIntent
 import xyz.martelle.clapet.health.openHealthFix
 import xyz.martelle.clapet.pseudohome.pausePseudoHomeAndStepAside
@@ -36,6 +39,14 @@ class SettingsActivity : ComponentActivity() {
 
     /** Bumped after a grant attempt, so the pages re-read the permission at once. */
     private val accessVersion = mutableIntStateOf(0)
+
+    private val calendarPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        // Refused for good: Android no longer shows its prompt, only the app info screen can grant it.
+        if (!granted && !shouldShowRequestPermissionRationale(Manifest.permission.READ_CALENDAR)) {
+            startActivity(appInfoIntent(this))
+        }
+        accessVersion.intValue++
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,7 +78,9 @@ class SettingsActivity : ComponentActivity() {
                     granted
                 }.await()
             },
-            onFixHealth = { openHealthFix(it) },
+            onFixHealth = { item ->
+                if (item == HealthItem.Calendar) calendarPermission.launch(Manifest.permission.READ_CALENDAR) else openHealthFix(item)
+            },
             onOpenAppInfo = { startActivity(appInfoIntent(this)) },
             onOpenXiaomiHome = { pausePseudoHomeAndStepAside() },
             onHealthShown = { lifecycleScope.launch { settings.markOnboardingSeen() } },

@@ -7,11 +7,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -63,6 +63,8 @@ import xyz.martelle.clapet.apps.AlphabetIndex
 import xyz.martelle.clapet.apps.AppEntry
 import xyz.martelle.clapet.cover.CoverGeometry
 import xyz.martelle.clapet.cover.coverStatusBar
+import xyz.martelle.clapet.header.HeaderInfo
+import xyz.martelle.clapet.header.UpcomingEvent
 import xyz.martelle.clapet.health.HealthItem
 import xyz.martelle.clapet.settings.WallpaperSettings
 import xyz.martelle.clapet.settings.label
@@ -129,6 +131,9 @@ fun HomeScreen(
     favoriteKeys: List<String>,
     actions: AppActions,
     onOpenSettings: () -> Unit,
+    /** Null until first read. */
+    header: HeaderInfo?,
+    onOpenEvent: (UpcomingEvent) -> Unit,
     /** First required setting that is off, if any: shown as a small accent dot. */
     healthAlert: HealthItem?,
     onHealthAlertClick: (HealthItem) -> Unit,
@@ -278,8 +283,14 @@ fun HomeScreen(
                     .fadeLayer { 1f - listProgress.value }
                     .padding(start = ListEdge),
             ) {
-                // Milestone 6 fills the header (date, alarm, upcoming events).
-                Spacer(Modifier.height(HeaderHeight))
+                HomeHeader(
+                    header = header,
+                    onOpenEvent = onOpenEvent,
+                    reserveTopEnd = healthAlert != null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(HeaderHeight),
+                )
                 FavoritesList(favorites, rowActions)
             }
             // Always composed, even on the home: opening it then costs no first composition, and

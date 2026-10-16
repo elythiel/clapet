@@ -1,5 +1,6 @@
 package xyz.martelle.clapet.home
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
@@ -27,6 +28,8 @@ import xyz.martelle.clapet.cover.coverGeometry
 import xyz.martelle.clapet.cover.rememberCoverGeometry
 import xyz.martelle.clapet.settings.SettingsActivity
 import xyz.martelle.clapet.coverUnlock
+import xyz.martelle.clapet.header.HeaderSource
+import xyz.martelle.clapet.header.openEventIntent
 import xyz.martelle.clapet.health.HealthChecker
 import xyz.martelle.clapet.health.HealthReport
 import xyz.martelle.clapet.health.openHealthFix
@@ -51,6 +54,7 @@ class HomeActivity : ComponentActivity() {
         val settings = settingsRepository
         val healthChecker = HealthChecker(this)
         val appList = installedApps.also { it.start() }
+        val headerSource = HeaderSource(this)
         val updateFavorites: ((List<String>) -> List<String>) -> Unit = { transform ->
             lifecycleScope.launch { settings.updateFavorites(transform) }
         }
@@ -74,6 +78,8 @@ class HomeActivity : ComponentActivity() {
             val allApps = apps.orEmpty()
             val favorites = remember(favoriteKeys, allApps) { Favorites.resolve(favoriteKeys, allApps) { it.key } }
             val geometry = rememberCoverGeometry()
+            // Collected while the home is visible: listeners off when hidden, a fresh read on return.
+            val header by remember { headerSource.header() }.collectAsStateWithLifecycle(initialValue = null)
             // Settings can break outside the app (an HyperOS update, for instance): re-check on every return.
             var health by remember { mutableStateOf<HealthReport?>(null) }
             LifecycleResumeEffect(Unit) {
@@ -98,6 +104,14 @@ class HomeActivity : ComponentActivity() {
                     favoriteKeys = favoriteKeys,
                     actions = appActions,
                     onOpenSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
+                    header = header,
+                    onOpenEvent = { event ->
+                        try {
+                            startActivity(openEventIntent(event))
+                        } catch (e: ActivityNotFoundException) {
+                            // No calendar app to show it: the tap does nothing.
+                        }
+                    },
                     healthAlert = health?.firstBroken,
                     onHealthAlertClick = { openHealthFix(it) },
                 )

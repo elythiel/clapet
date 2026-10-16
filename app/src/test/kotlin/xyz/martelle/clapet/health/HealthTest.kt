@@ -38,13 +38,15 @@ class HealthTest {
         )
 
         assertEquals(HealthItem.Battery, report.firstBroken)
-        assertEquals(3, report.okCount)
-        assertEquals(5, report.total)
+        assertEquals(4, report.okCount)
+        assertEquals(6, report.total)
     }
 
     @Test
     fun `an optional setting off raises no alert`() {
-        val report = HealthReport(HealthItem.entries.associateWith { it != HealthItem.RecentsLock })
+        val report = HealthReport(
+            HealthItem.entries.associateWith { it != HealthItem.RecentsLock && it != HealthItem.Calendar },
+        )
 
         assertNull(report.firstBroken)
     }

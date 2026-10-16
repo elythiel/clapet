@@ -4,8 +4,17 @@ import androidx.compose.runtime.Immutable
 import org.json.JSONArray
 import org.json.JSONException
 
-/** What keeps Clapet working on HyperOS. Order is the display order. */
-enum class HealthItem(val required: Boolean) {
+/** How the permissions page sorts its rows. */
+enum class HealthGroup {
+    /** What HyperOS needs not to close Clapet or to let it work at all. */
+    KeepRunning,
+
+    /** What a feature needs; without it, only that feature is missing. */
+    Features,
+}
+
+/** The system accesses Clapet relies on. Order is the display order, within each group. */
+enum class HealthItem(val required: Boolean, val group: HealthGroup = HealthGroup.KeepRunning) {
     /** The pseudo-home accessibility service. */
     CoverHome(required = true),
 
@@ -20,6 +29,9 @@ enum class HealthItem(val required: Boolean) {
 
     /** Locking Clapet in recents protects it from "clear all"; nice to have. */
     RecentsLock(required = false),
+
+    /** READ_CALENDAR, for the upcoming events of the header; without it, date and alarm only. */
+    Calendar(required = false, group = HealthGroup.Features),
 }
 
 @Immutable

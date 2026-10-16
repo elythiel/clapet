@@ -7,13 +7,13 @@ import android.provider.Settings
 import androidx.core.net.toUri
 
 /**
- * The system screen that fixes [item], or null when Clapet handles it itself (DUMP) or
- * when there is no screen (recents lock, explained instead). Falls back to the app info
+ * The system screen that fixes [item], or null when Clapet handles it itself (DUMP, the
+ * calendar permission prompt) or when there is no screen (recents lock, explained instead). Falls back to the app info
  * screen when a Xiaomi screen is missing.
  */
 fun HealthItem.shortcut(context: Context): Intent? = when (this) {
     HealthItem.CoverHome -> Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-    HealthItem.CoverUnlock, HealthItem.RecentsLock -> null
+    HealthItem.CoverUnlock, HealthItem.RecentsLock, HealthItem.Calendar -> null
     HealthItem.AutoStart ->
         Intent("miui.intent.action.OP_AUTO_START").addCategory(Intent.CATEGORY_DEFAULT).orAppInfo(context)
     HealthItem.Battery -> batteryShortcut(context)

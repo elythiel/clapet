@@ -81,7 +81,10 @@
     <string name="unlock_copy">Copy</string>
 
     <!-- Keep Clapet running (health) -->
-    <string name="health_title">Keep Clapet running</string>
+    <string name="health_title">Permissions</string>
+    <string name="health_group_keep_running">Keep Clapet running</string>
+    <string name="health_group_features">For features</string>
+    <string name="health_group_features_hint">Without them, only that feature is missing</string>
     <!-- Settings set, then total. -->
     <plurals name="health_summary">
         <item quantity="one">%1$d of %2$d set</item>
@@ -103,6 +106,8 @@
     <string name="health_battery_hint">No restrictions</string>
     <string name="health_recents_lock">Lock in recents</string>
     <string name="health_recents_lock_hint">Optional · in recent apps, long-press Clapet, then tap the lock</string>
+    <string name="health_calendar">Calendar</string>
+    <string name="health_calendar_hint">Upcoming events on the home</string>
     <string name="health_xiaomi_home">Empty Xiaomi cover home</string>
     <string name="health_xiaomi_home_hint">For a seamless return, remove the widgets and apps from the Xiaomi cover home and give it a black wallpaper (or Clapet\'s wallpaper). Clapet pauses for 5 minutes meanwhile.</string>
     <string name="health_xiaomi_home_open">Open the Xiaomi home</string>
@@ -118,4 +123,11 @@
     <string name="app_move_up">Move up</string>
     <string name="app_move_down">Move down</string>
     <string name="alphabet_index">Alphabetical index</string>
+    <string name="header_upcoming">Upcoming</string>
+    <string name="header_today">Today</string>
+    <string name="header_tomorrow">Tomorrow</string>
+    <string name="header_ongoing">Now</string>
+    <string name="header_untitled">Untitled</string>
+    <!-- Read by TalkBack: %1$s is the alarm time, possibly with its day. -->
+    <string name="header_alarm">Alarm at %1$s</string>
 </resources>

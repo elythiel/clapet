@@ -28,6 +28,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import xyz.martelle.clapet.R
+import xyz.martelle.clapet.health.HealthGroup
 import xyz.martelle.clapet.health.HealthItem
 import xyz.martelle.clapet.health.HealthReport
 import xyz.martelle.clapet.theme.LocalClapetColors
@@ -40,6 +41,7 @@ val HealthItem.label: Int
         HealthItem.AutoStart -> R.string.health_auto_start
         HealthItem.Battery -> R.string.health_battery
         HealthItem.RecentsLock -> R.string.health_recents_lock
+        HealthItem.Calendar -> R.string.health_calendar
     }
 
 @get:StringRes
@@ -50,6 +52,7 @@ private val HealthItem.hint: Int
         HealthItem.AutoStart -> R.string.health_auto_start_hint
         HealthItem.Battery -> R.string.health_battery_hint
         HealthItem.RecentsLock -> R.string.health_recents_lock_hint
+        HealthItem.Calendar -> R.string.health_calendar_hint
     }
 
 @Composable
@@ -71,19 +74,20 @@ internal fun HealthPage(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 12.dp),
     ) {
-        PageTitle(
-            stringResource(R.string.health_title),
-            subtitle = "${healthSummary(report)} · ${stringResource(R.string.health_subtitle)}",
-        )
-        SettingsGroup {
-            HealthItem.entries.forEachIndexed { index, item ->
-                if (index > 0) HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-                HealthRow(
-                    item = item,
-                    ok = report.ok[item] == true,
-                    onFix = { onFix(item) },
-                    onOpenAppInfo = onOpenAppInfo,
-                )
+        PageTitle(stringResource(R.string.health_title), subtitle = healthSummary(report))
+        HealthGroup.entries.forEach { group ->
+            val items = HealthItem.entries.filter { it.group == group }
+            GroupLabel(group)
+            SettingsGroup {
+                items.forEachIndexed { index, item ->
+                    if (index > 0) HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+                    HealthRow(
+                        item = item,
+                        ok = report.ok[item] == true,
+                        onFix = { onFix(item) },
+                        onOpenAppInfo = onOpenAppInfo,
+                    )
+                }
             }
         }
         if (onOpenXiaomiHome != null) {
@@ -101,6 +105,22 @@ internal fun HealthPage(
             }
         }
         Spacer(Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun GroupLabel(group: HealthGroup) {
+    val (title, hint) = when (group) {
+        HealthGroup.KeepRunning -> R.string.health_group_keep_running to R.string.health_subtitle
+        HealthGroup.Features -> R.string.health_group_features to R.string.health_group_features_hint
+    }
+    Column(Modifier.padding(start = 8.dp, top = 16.dp, bottom = 8.dp)) {
+        Text(stringResource(title), style = MaterialTheme.typography.titleSmall)
+        Text(
+            stringResource(hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

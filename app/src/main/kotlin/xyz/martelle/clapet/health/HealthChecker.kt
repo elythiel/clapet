@@ -1,9 +1,11 @@
 package xyz.martelle.clapet.health
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AppOpsManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
@@ -24,6 +26,8 @@ class HealthChecker(context: Context) {
                 HealthItem.AutoStart -> isAutoStartAllowed()
                 HealthItem.Battery -> isBatteryUnrestricted()
                 HealthItem.RecentsLock -> isLockedInRecents()
+                HealthItem.Calendar ->
+                    appContext.checkSelfPermission(Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED
             }
         },
     )

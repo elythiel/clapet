@@ -70,7 +70,10 @@
     <string name="unlock_copy">Copier</string>
 
     <!-- Garder Clapet actif (santé) -->
-    <string name="health_title">Garder Clapet actif</string>
+    <string name="health_title">Autorisations</string>
+    <string name="health_group_keep_running">Pour garder Clapet actif</string>
+    <string name="health_group_features">Pour les fonctions</string>
+    <string name="health_group_features_hint">Sans elles, seule la fonction concernée manque</string>
     <plurals name="health_summary">
         <item quantity="one">%1$d sur %2$d réglé</item>
         <item quantity="many">%1$d sur %2$d réglés</item>
@@ -92,6 +95,8 @@
     <string name="health_battery_hint">Aucune restriction</string>
     <string name="health_recents_lock">Verrou des récents</string>
     <string name="health_recents_lock_hint">Optionnel · dans les apps récentes, appuyez longuement sur Clapet, puis sur le cadenas</string>
+    <string name="health_calendar">Agenda</string>
+    <string name="health_calendar_hint">Événements à venir sur l’accueil</string>
     <string name="health_xiaomi_home">Accueil Xiaomi vide</string>
     <string name="health_xiaomi_home_hint">Pour un retour sans à-coup, retirez les widgets et les apps de l’accueil Xiaomi de l’écran externe et mettez-lui un fond noir (ou celui de Clapet). Clapet se met en pause 5 minutes pendant ce temps.</string>
     <string name="health_xiaomi_home_open">Ouvrir l’accueil Xiaomi</string>
@@ -106,4 +111,10 @@
     <string name="app_move_up">Monter</string>
     <string name="app_move_down">Descendre</string>
     <string name="alphabet_index">Index alphabétique</string>
+    <string name="header_upcoming">À venir</string>
+    <string name="header_today">Aujourd’hui</string>
+    <string name="header_tomorrow">Demain</string>
+    <string name="header_ongoing">En cours</string>
+    <string name="header_untitled">Sans titre</string>
+    <string name="header_alarm">Réveil à %1$s</string>
 </resources>
