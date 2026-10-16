@@ -79,7 +79,13 @@ internal fun SettingsMenu(
     onOpen: (SettingsPage) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier.fillMaxSize().padding(horizontal = 12.dp)) {
+    // Scrolls: on the cover screen (428 dp high) the entries no longer fit.
+    Column(
+        modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 12.dp),
+    ) {
         PageTitle(stringResource(R.string.settings_title))
         SettingsGroup {
             SettingsEntry(
@@ -129,7 +135,7 @@ internal fun SettingsMenu(
                 onClick = { onOpen(SettingsPage.Wallpaper) },
             )
         }
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(24.dp))
         Text(
             text = stringResource(R.string.settings_footer, stringResource(R.string.app_name), appInfo.versionName, appInfo.packageName),
             style = MaterialTheme.typography.labelSmall,
