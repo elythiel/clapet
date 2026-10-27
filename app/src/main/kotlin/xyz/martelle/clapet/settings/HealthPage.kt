@@ -5,12 +5,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -68,12 +65,7 @@ internal fun HealthPage(
     onOpenXiaomiHome: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp),
-    ) {
+    SettingsPageColumn(modifier) {
         PageTitle(stringResource(R.string.health_title), subtitle = healthSummary(report))
         HealthGroup.entries.forEach { group ->
             val items = HealthItem.entries.filter { it.group == group }
@@ -104,7 +96,6 @@ internal fun HealthPage(
                 ) { Text(stringResource(R.string.health_xiaomi_home_open)) }
             }
         }
-        Spacer(Modifier.height(16.dp))
     }
 }
 

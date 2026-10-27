@@ -6,12 +6,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -29,6 +32,24 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import xyz.martelle.clapet.R
+
+/**
+ * The cover screen's corners are rounded but it reports none (radius 0), so every page ends with
+ * this much room: the last line scrolls clear of the bottom corner.
+ */
+private val PageBottomMargin = 48.dp
+
+/** A settings page: it scrolls, since the cover screen (428 dp high) fits only a few rows. */
+@Composable
+internal fun SettingsPageColumn(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(start = 12.dp, end = 12.dp, bottom = PageBottomMargin),
+        content = content,
+    )
+}
 
 @Composable
 internal fun PageTitle(title: String, modifier: Modifier = Modifier, subtitle: String? = null) {

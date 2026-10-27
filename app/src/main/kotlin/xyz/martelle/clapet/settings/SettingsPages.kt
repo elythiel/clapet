@@ -12,18 +12,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -79,13 +76,7 @@ internal fun SettingsMenu(
     onOpen: (SettingsPage) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Scrolls: on the cover screen (428 dp high) the entries no longer fit.
-    Column(
-        modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp),
-    ) {
+    SettingsPageColumn(modifier) {
         PageTitle(stringResource(R.string.settings_title))
         SettingsGroup {
             SettingsEntry(
@@ -140,7 +131,7 @@ internal fun SettingsMenu(
             text = stringResource(R.string.settings_footer, stringResource(R.string.app_name), appInfo.versionName, appInfo.packageName),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 8.dp, bottom = 16.dp),
+            modifier = Modifier.padding(start = 8.dp),
         )
     }
 }
@@ -190,12 +181,7 @@ internal fun AccentPage(
     onChange: (AccentMode, Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp),
-    ) {
+    SettingsPageColumn(modifier) {
         PageTitle(stringResource(R.string.settings_accent), subtitle = stringResource(R.string.accent_subtitle))
         SettingsGroup(selectable = true) {
             AccentMode.entries.forEach { mode ->
@@ -351,12 +337,7 @@ internal fun WallpaperPage(
     val picker = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
         if (uri != null) scope.launch { importFailed = !actions.importWallpaper(uri) }
     }
-    Column(
-        modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp),
-    ) {
+    SettingsPageColumn(modifier) {
         PageTitle(stringResource(R.string.settings_wallpaper))
         SettingsGroup(selectable = true) {
             RadioOption(
