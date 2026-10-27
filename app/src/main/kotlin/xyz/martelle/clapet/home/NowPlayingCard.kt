@@ -49,8 +49,8 @@ import xyz.martelle.clapet.notifications.NowPlaying
 import xyz.martelle.clapet.theme.LocalClapetColors
 import xyz.martelle.clapet.theme.TextPrimary
 
-/** What the player's buttons do. */
-class MediaActions(val onPrevious: () -> Unit, val onPlayPause: () -> Unit, val onNext: () -> Unit)
+/** What the player does: its buttons, and a tap elsewhere, which opens the playing app. */
+class MediaActions(val onPrevious: () -> Unit, val onPlayPause: () -> Unit, val onNext: () -> Unit, val onOpen: () -> Unit)
 
 /** Each button takes a third of the width and this height to the touch, whatever its drawn size. */
 private val ControlsHeight = 52.dp
@@ -58,43 +58,52 @@ private val ControlsHeight = 52.dp
 /**
  * The player in the square above the cameras, shown only while a session plays or is paused:
  * cover, title, artist, progress, then previous, play/pause and next. The buttons are drawn at
- * 36-40 dp for lack of room; their touch areas fill the whole row.
+ * 36-40 dp for lack of room; their touch areas fill the whole row. A tap above them opens the
+ * playing app.
  */
 @Composable
 fun NowPlayingCard(nowPlaying: NowPlaying, actions: MediaActions, modifier: Modifier = Modifier) {
     val accent = LocalClapetColors.current.accent
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Box(
-            contentAlignment = Alignment.Center,
+        // Off the buttons' row: a disabled button lets the tap through, which must not open the app.
+        Column(
+            verticalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF2A2440)),
+                .clickable(onClickLabel = stringResource(R.string.media_open), onClick = actions.onOpen),
         ) {
-            val art = nowPlaying.art
-            if (art != null) {
-                Image(art, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-            } else {
-                Icon(painterResource(R.drawable.ic_music), contentDescription = null, tint = Color(0xFFB9A3F2), modifier = Modifier.size(26.dp))
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFF2A2440)),
+            ) {
+                val art = nowPlaying.art
+                if (art != null) {
+                    Image(art, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                } else {
+                    Icon(painterResource(R.drawable.ic_music), contentDescription = null, tint = Color(0xFFB9A3F2), modifier = Modifier.size(26.dp))
+                }
             }
-        }
-        Column {
-            Text(
-                nowPlaying.title,
-                color = TextPrimary,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                lineHeight = 17.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (nowPlaying.artist.isNotBlank()) {
-                Text(nowPlaying.artist, color = muted, fontSize = 11.sp, lineHeight = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Column {
+                Text(
+                    nowPlaying.title,
+                    color = TextPrimary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 17.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (nowPlaying.artist.isNotBlank()) {
+                    Text(nowPlaying.artist, color = muted, fontSize = 11.sp, lineHeight = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
             }
+            if (nowPlaying.durationMs > 0) Progress(nowPlaying, accent)
         }
-        if (nowPlaying.durationMs > 0) Progress(nowPlaying, accent)
         Row(Modifier.fillMaxWidth().height(ControlsHeight)) {
             Control(R.drawable.ic_skip_previous, stringResource(R.string.media_previous), 36.dp, nowPlaying.canSkipPrevious, filled = false, onClick = actions.onPrevious)
             Control(

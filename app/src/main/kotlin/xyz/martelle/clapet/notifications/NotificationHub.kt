@@ -77,18 +77,25 @@ class NotificationHub(context: Context) {
     fun open(key: String, activity: Activity): Boolean {
         val notification = posted[key]?.notification ?: return false
         val content = notification.contentIntent ?: return false
+        val sent = content.sendOn(activity)
+        if (sent && notification.flags and Notification.FLAG_AUTO_CANCEL != 0) clear(key)
+        return sent
+    }
+
+    /** Opens the playing app's screen for its session, as the system player does. False when it has none. */
+    fun openPlayer(activity: Activity): Boolean = controller?.sessionActivity?.sendOn(activity) ?: false
+
+    private fun PendingIntent.sendOn(activity: Activity): Boolean {
         val options = ActivityOptions.makeBasic()
             .setLaunchDisplayId(activity.display.displayId)
             // The intent is another app's: Clapet, visible, lends it its right to open a screen.
             .setPendingIntentBackgroundActivityStartMode(allowWhileVisible())
-        val sent = try {
-            content.send(activity, 0, null, null, null, null, options.toBundle())
+        return try {
+            send(activity, 0, null, null, null, null, options.toBundle())
             true
         } catch (e: PendingIntent.CanceledException) {
             false
         }
-        if (sent && notification.flags and Notification.FLAG_AUTO_CANCEL != 0) clear(key)
-        return sent
     }
 
     fun clear(key: String) {

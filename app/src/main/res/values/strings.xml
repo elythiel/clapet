@@ -132,6 +132,7 @@
     <string name="media_play">Play</string>
     <string name="media_pause">Pause</string>
     <string name="media_next">Next</string>
+    <string name="media_open">Open the player</string>
     <string name="header_upcoming">Upcoming</string>
     <string name="header_today">Today</string>
     <string name="header_tomorrow">Tomorrow</string>

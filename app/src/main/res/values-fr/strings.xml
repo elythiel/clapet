@@ -119,6 +119,7 @@
     <string name="media_play">Lecture</string>
     <string name="media_pause">Pause</string>
     <string name="media_next">Suivant</string>
+    <string name="media_open">Ouvrir le lecteur</string>
     <string name="header_upcoming">À venir</string>
     <string name="header_today">Aujourd’hui</string>
     <string name="header_tomorrow">Demain</string>

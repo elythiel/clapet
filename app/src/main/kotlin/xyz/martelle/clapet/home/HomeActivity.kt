@@ -64,7 +64,18 @@ class HomeActivity : ComponentActivity() {
             onReply = { notification, text -> hub.reply(notification.key, text) },
             onClear = { notification -> hub.clear(notification.key) },
         )
-        val mediaActions = MediaActions(onPrevious = hub::skipPrevious, onPlayPause = hub::playPause, onNext = hub::skipNext)
+        val mediaActions = MediaActions(
+            onPrevious = hub::skipPrevious,
+            onPlayPause = hub::playPause,
+            onNext = hub::skipNext,
+            // A session with no screen of its own opens its app instead.
+            onOpen = {
+                if (!hub.openPlayer(this)) {
+                    val playing = hub.nowPlaying.value?.packageName
+                    appList.apps.value?.firstOrNull { it.component.packageName == playing }?.let(appList::launch)
+                }
+            },
+        )
         val updateFavorites: ((List<String>) -> List<String>) -> Unit = { transform ->
             // Unknown until the app list loads: keep every key rather than wipe the favorites.
             val installed = appList.apps.value?.mapTo(HashSet()) { it.key }
