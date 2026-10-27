@@ -94,6 +94,14 @@ object Upcoming {
     fun alarmNeedsDay(alarm: LocalDateTime, now: LocalDateTime): Boolean =
         Duration.between(now, alarm) >= Duration.ofDays(1)
 
+    /**
+     * When the next alarm rings. HyperOS's Clock also books its "alarm soon" notices (an hour,
+     * then a quarter of an hour ahead) as alarm clocks, so the system's next one is the first
+     * notice; the Clock keeps the ring time in a global setting, used when it is not earlier.
+     */
+    fun alarmRingMillis(systemNext: Long, fromXiaomiClock: Boolean, xiaomiRing: Long?): Long =
+        if (fromXiaomiClock && xiaomiRing != null && xiaomiRing >= systemNext) xiaomiRing else systemNext
+
     private fun CalendarInstance.toUpcoming(now: LocalDateTime, zone: ZoneId): UpcomingEvent {
         // All-day events are stored as UTC midnights: read back as dates, then placed on local days.
         val startsAt: LocalDateTime

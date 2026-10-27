@@ -88,6 +88,17 @@ class HeaderTest {
     }
 
     @Test
+    fun `the alarm rings at the Clock's time, not at its notice`() {
+        val notice = 1_000L
+        val ring = 4_600L
+        assertEquals(ring, Upcoming.alarmRingMillis(notice, fromXiaomiClock = true, xiaomiRing = ring))
+        // Another app's alarm, no ring time, or a stale one: the system's next alarm stands.
+        assertEquals(notice, Upcoming.alarmRingMillis(notice, fromXiaomiClock = false, xiaomiRing = ring))
+        assertEquals(notice, Upcoming.alarmRingMillis(notice, fromXiaomiClock = true, xiaomiRing = null))
+        assertEquals(notice, Upcoming.alarmRingMillis(notice, fromXiaomiClock = true, xiaomiRing = 500L))
+    }
+
+    @Test
     fun `alarm label needs its day from 24 hours away`() {
         assertFalse(Upcoming.alarmNeedsDay(now.plusHours(17), now))
         assertTrue(Upcoming.alarmNeedsDay(now.plusDays(1), now))

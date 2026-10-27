@@ -12,6 +12,7 @@ import android.database.ContentObserver
 import android.os.Handler
 import android.os.Looper
 import android.provider.CalendarContract
+import android.provider.Settings
 import android.text.format.DateFormat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -56,7 +57,7 @@ class HeaderSource(context: Context) {
         val zone = ZoneId.systemDefault()
         val now = LocalDateTime.now(zone)
         val events = if (hasCalendarPermission()) Upcoming.pick(queryInstances(now, zone), now, zone) else emptyList()
-        val alarm = alarmManager.nextAlarmClock?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it.triggerTime), zone) }
+        val alarm = nextAlarmMillis()?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), zone) }
         return HeaderInfo(
             today = now.toLocalDate(),
             nextAlarm = alarm,
@@ -65,6 +66,22 @@ class HeaderSource(context: Context) {
             use24HourFormat = DateFormat.is24HourFormat(appContext),
             refreshAt = Upcoming.refreshAt(events, alarm, now),
         )
+    }
+
+    private fun nextAlarmMillis(): Long? {
+        val next = alarmManager.nextAlarmClock ?: return null
+        return Upcoming.alarmRingMillis(
+            systemNext = next.triggerTime,
+            fromXiaomiClock = next.showIntent?.creatorPackage == XiaomiClock,
+            xiaomiRing = xiaomiRingMillis(),
+        )
+    }
+
+    private fun xiaomiRingMillis(): Long? = try {
+        Settings.Global.getLong(appContext.contentResolver, XiaomiNextAlarmKey, 0L).takeIf { it > 0L }
+    } catch (e: SecurityException) {
+        // Not readable on this build: the system's next alarm clock stands.
+        null
     }
 
     /** Signals, conflated: the reader only needs to know that something changed. */
@@ -87,16 +104,20 @@ class HeaderSource(context: Context) {
                 trySend(Unit)
             }
         }
+        // The Clock may write its ring time after the next-alarm broadcast: watch it too.
+        appContext.contentResolver.registerContentObserver(Settings.Global.getUriFor(XiaomiNextAlarmKey), false, observer)
         // Events added, changed or synced. Watching needs the permission: without it, nothing to watch.
-        val observing = hasCalendarPermission() && try {
-            appContext.contentResolver.registerContentObserver(CalendarContract.CONTENT_URI, true, observer)
-            true
-        } catch (e: SecurityException) {
-            false
+        if (hasCalendarPermission()) {
+            try {
+                appContext.contentResolver.registerContentObserver(CalendarContract.CONTENT_URI, true, observer)
+            } catch (e: SecurityException) {
+                // Revoked meanwhile: the Clock's setting is still watched.
+            }
         }
         awaitClose {
             appContext.unregisterReceiver(receiver)
-            if (observing) appContext.contentResolver.unregisterContentObserver(observer)
+            // Drops both registrations.
+            appContext.contentResolver.unregisterContentObserver(observer)
         }
     }.conflate()
 
@@ -139,6 +160,11 @@ class HeaderSource(context: Context) {
 
     private companion object {
         const val RefreshSlackMillis = 1_000L
+
+        const val XiaomiClock = "com.android.deskclock"
+
+        /** Where HyperOS's Clock writes when its next alarm rings, in milliseconds. */
+        const val XiaomiNextAlarmKey = "next_alarm_clock_long"
 
         // Read by index in queryInstances: keep the order.
         val Projection = arrayOf(
