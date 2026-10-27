@@ -66,7 +66,11 @@ class HomeActivity : ComponentActivity() {
         )
         val mediaActions = MediaActions(onPrevious = hub::skipPrevious, onPlayPause = hub::playPause, onNext = hub::skipNext)
         val updateFavorites: ((List<String>) -> List<String>) -> Unit = { transform ->
-            lifecycleScope.launch { settings.updateFavorites(transform) }
+            // Unknown until the app list loads: keep every key rather than wipe the favorites.
+            val installed = appList.apps.value?.mapTo(HashSet()) { it.key }
+            lifecycleScope.launch {
+                settings.updateFavorites { keys -> transform(if (installed == null) keys else Favorites.prune(keys, installed)) }
+            }
         }
         val appActions = AppActions(
             onLaunch = appList::launch,

@@ -387,7 +387,7 @@ fun HomeScreen(
                     actions = notificationActions,
                     onDismiss = { unfolded = null },
                     isFavorite = unfoldedApp.key in favoriteKeys,
-                    favoritesFull = favoriteKeys.size >= Favorites.MAX,
+                    favoritesFull = favorites.size >= Favorites.MAX,
                     onFavoriteToggle = {
                         if (unfoldedApp.key in favoriteKeys) actions.onRemoveFavorite(unfoldedApp) else actions.onAddFavorite(unfoldedApp)
                     },

@@ -79,6 +79,7 @@ import kotlin.math.sign
 import kotlinx.coroutines.launch
 import xyz.martelle.clapet.R
 import xyz.martelle.clapet.apps.AppEntry
+import xyz.martelle.clapet.apps.Favorites
 import xyz.martelle.clapet.notifications.AppNotification
 import xyz.martelle.clapet.notifications.AppNotifications
 import xyz.martelle.clapet.theme.LocalClapetColors
@@ -229,13 +230,11 @@ private fun PanelHeader(
         IconButton(onClick = onFavoriteToggle, enabled = isFavorite || !favoritesFull, modifier = Modifier.size(HeaderButton)) {
             Icon(
                 painterResource(if (isFavorite) R.drawable.ic_star_off else R.drawable.ic_star),
-                contentDescription = stringResource(
-                    when {
-                        isFavorite -> R.string.app_menu_remove_favorite
-                        favoritesFull -> R.string.favorites_full
-                        else -> R.string.app_menu_add_favorite
-                    },
-                ),
+                contentDescription = when {
+                    isFavorite -> stringResource(R.string.app_menu_remove_favorite)
+                    favoritesFull -> stringResource(R.string.favorites_full, Favorites.MAX)
+                    else -> stringResource(R.string.app_menu_add_favorite)
+                },
                 modifier = Modifier.size(20.dp),
             )
         }

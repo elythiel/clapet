@@ -102,7 +102,7 @@
 
     <!-- Favoris et alphabet -->
     <string name="favorites_empty">Appui long sur une app de l’alphabet pour l’ajouter ici</string>
-    <string name="favorites_full">Favoris complets (5)</string>
+    <string name="favorites_full">Favoris complets (%1$d)</string>
     <string name="app_menu_add_favorite">Ajouter aux favoris</string>
     <string name="app_menu_remove_favorite">Retirer des favoris</string>
     <string name="app_menu_info">Infos de l’app</string>

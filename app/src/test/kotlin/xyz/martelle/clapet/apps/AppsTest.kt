@@ -39,9 +39,9 @@ class AppsTest {
     }
 
     @Test
-    fun `favorites cap at five and ignore duplicates`() {
-        val five = listOf("a", "b", "c", "d", "e")
-        assertEquals(five, Favorites.add(five, "f"))
+    fun `favorites cap at six and ignore duplicates`() {
+        val six = listOf("a", "b", "c", "d", "e", "f")
+        assertEquals(six, Favorites.add(six, "g"))
         assertEquals(listOf("a", "b"), Favorites.add(listOf("a", "b"), "a"))
         assertEquals(listOf("a", "b", "c"), Favorites.add(listOf("a", "b"), "c"))
     }
@@ -58,5 +58,10 @@ class AppsTest {
     fun `uninstalled favorites are skipped, order kept`() {
         val installed = listOf("x", "z")
         assertEquals(listOf("z", "x"), Favorites.resolve(listOf("z", "gone", "x"), installed) { it })
+    }
+
+    @Test
+    fun `pruning drops uninstalled favorites, order kept`() {
+        assertEquals(listOf("z", "x"), Favorites.prune(listOf("z", "gone", "x"), setOf("x", "z")))
     }
 }

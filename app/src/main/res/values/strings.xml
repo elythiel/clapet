@@ -114,7 +114,7 @@
 
     <!-- Favorites and alphabet -->
     <string name="favorites_empty">Long-press an app in the alphabet to add it here</string>
-    <string name="favorites_full">Favorites are full (5)</string>
+    <string name="favorites_full">Favorites are full (%1$d)</string>
     <string name="app_menu_add_favorite">Add to favorites</string>
     <string name="app_menu_remove_favorite">Remove from favorites</string>
     <string name="app_menu_info">App info</string>
