@@ -390,6 +390,8 @@ fun HomeScreen(
                     favoritesFull = favorites.size >= Favorites.MAX,
                     onFavoriteToggle = {
                         if (unfoldedApp.key in favoriteKeys) actions.onRemoveFavorite(unfoldedApp) else actions.onAddFavorite(unfoldedApp)
+                        // Done with the app: the home shows its favorites again, with the change.
+                        unfolded = null
                     },
                     onAppInfo = { actions.onAppInfo(unfoldedApp) },
                     camerasOnStart = geometry?.upsideDown == true,
