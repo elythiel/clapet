@@ -68,6 +68,8 @@ import kotlin.math.roundToInt
 import xyz.martelle.clapet.R
 import xyz.martelle.clapet.apps.AlphabetIndex
 import xyz.martelle.clapet.apps.AppEntry
+import xyz.martelle.clapet.apps.LaunchScore
+import xyz.martelle.clapet.apps.LaunchScores
 import xyz.martelle.clapet.notifications.AppNotification
 import xyz.martelle.clapet.notifications.AppNotifications
 import xyz.martelle.clapet.notifications.NotificationRules
@@ -215,8 +217,10 @@ fun FavoritesList(
 @Immutable
 data class AppSection(val letter: Char, val apps: List<AppEntry>)
 
-fun sectionsOf(apps: List<AppEntry>): List<AppSection> {
-    val byLetter = apps.groupBy { it.letter }
+/** Within a letter, the apps most launched from Clapet come first, then the others alphabetically. */
+fun sectionsOf(apps: List<AppEntry>, scores: Map<String, LaunchScore>): List<AppSection> {
+    // groupBy keeps the order: each letter's apps come out sorted.
+    val byLetter = LaunchScores.sort(apps, scores) { it.key }.groupBy { it.letter }
     return AlphabetIndex.letters.mapNotNull { letter -> byLetter[letter]?.let { AppSection(letter, it) } }
 }
 

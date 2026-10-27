@@ -64,4 +64,40 @@ class AppsTest {
     fun `pruning drops uninstalled favorites, order kept`() {
         assertEquals(listOf("z", "x"), Favorites.prune(listOf("z", "gone", "x"), setOf("x", "z")))
     }
+
+    private val day = 24L * 60 * 60 * 1000
+
+    @Test
+    fun `a launch adds one to the score faded by its half-life`() {
+        val first = LaunchScores.record(emptyMap(), "a", nowMillis = 0)
+        assertEquals(LaunchScore(1.0, 0), first["a"])
+        val second = LaunchScores.record(first, "a", nowMillis = LaunchScores.HALF_LIFE_MILLIS)
+        assertEquals(LaunchScore(1.5, LaunchScores.HALF_LIFE_MILLIS), second["a"])
+    }
+
+    @Test
+    fun `most launched first, the rest in the given order`() {
+        val now = 1_800_000_000_000L
+        var scores = emptyMap<String, LaunchScore>()
+        repeat(3) { scores = LaunchScores.record(scores, "c", now) }
+        scores = LaunchScores.record(scores, "d", now)
+        val sorted = LaunchScores.sort(listOf("a", "b", "c", "d", "e"), scores) { it }
+        assertEquals(listOf("c", "d", "a", "b", "e"), sorted)
+    }
+
+    @Test
+    fun `a few recent launches overtake many old ones`() {
+        val now = 1_800_000_000_000L
+        var scores = emptyMap<String, LaunchScore>()
+        // 20 launches two months ago fade to about 1.0 today; 3 launches this week stay near 3.
+        repeat(20) { scores = LaunchScores.record(scores, "old", now - 60 * day) }
+        repeat(3) { scores = LaunchScores.record(scores, "new", now - 2 * day) }
+        assertEquals(listOf("new", "old"), LaunchScores.sort(listOf("old", "new"), scores) { it })
+    }
+
+    @Test
+    fun `pruning drops uninstalled apps' scores`() {
+        val scores = LaunchScores.record(LaunchScores.record(emptyMap(), "kept", 0), "gone", 0)
+        assertEquals(setOf("kept"), LaunchScores.prune(scores, setOf("kept")).keys)
+    }
 }

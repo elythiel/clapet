@@ -35,6 +35,7 @@ import xyz.martelle.clapet.health.HealthChecker
 import xyz.martelle.clapet.health.HealthReport
 import xyz.martelle.clapet.health.openHealthFix
 import xyz.martelle.clapet.apps.Favorites
+import xyz.martelle.clapet.apps.LaunchScores
 import xyz.martelle.clapet.installedApps
 import xyz.martelle.clapet.notificationHub
 import xyz.martelle.clapet.settingsRepository
@@ -76,15 +77,26 @@ class HomeActivity : ComponentActivity() {
                 }
             },
         )
+        // Unknown until the app list loads: then keep every key rather than wipe what is stored.
+        val installedKeys = { appList.apps.value?.mapTo(HashSet()) { it.key } }
         val updateFavorites: ((List<String>) -> List<String>) -> Unit = { transform ->
-            // Unknown until the app list loads: keep every key rather than wipe the favorites.
-            val installed = appList.apps.value?.mapTo(HashSet()) { it.key }
+            val installed = installedKeys()
             lifecycleScope.launch {
                 settings.updateFavorites { keys -> transform(if (installed == null) keys else Favorites.prune(keys, installed)) }
             }
         }
         val appActions = AppActions(
-            onLaunch = appList::launch,
+            onLaunch = { app ->
+                appList.launch(app)
+                // Reached only once started: a launch that throws never scores.
+                val installed = installedKeys()
+                val now = System.currentTimeMillis()
+                lifecycleScope.launch {
+                    settings.updateLaunchScores { scores ->
+                        LaunchScores.record(if (installed == null) scores else LaunchScores.prune(scores, installed), app.key, now)
+                    }
+                }
+            },
             onAppInfo = appList::openAppInfo,
             onAddFavorite = { app -> updateFavorites { Favorites.add(it, app.key) } },
             onRemoveFavorite = { app -> updateFavorites { Favorites.remove(it, app.key) } },
@@ -100,6 +112,7 @@ class HomeActivity : ComponentActivity() {
             val wallpaper by settings.wallpaper.collectAsStateWithLifecycle(initialValue = null)
             val apps by appList.apps.collectAsStateWithLifecycle()
             val favoriteKeys by settings.favorites.collectAsStateWithLifecycle(initialValue = emptyList())
+            val launchScores by settings.launchScores.collectAsStateWithLifecycle(initialValue = emptyMap())
             val allApps = apps.orEmpty()
             val favorites = remember(favoriteKeys, allApps) { Favorites.resolve(favoriteKeys, allApps) { it.key } }
             val geometry = rememberCoverGeometry()
@@ -129,6 +142,7 @@ class HomeActivity : ComponentActivity() {
                     apps = allApps,
                     favorites = favorites,
                     favoriteKeys = favoriteKeys,
+                    launchScores = launchScores,
                     actions = appActions,
                     onOpenSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
                     header = header,

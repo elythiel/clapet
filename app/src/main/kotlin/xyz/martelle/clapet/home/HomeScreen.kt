@@ -57,6 +57,7 @@ import xyz.martelle.clapet.R
 import xyz.martelle.clapet.apps.AlphabetIndex
 import xyz.martelle.clapet.apps.AppEntry
 import xyz.martelle.clapet.apps.Favorites
+import xyz.martelle.clapet.apps.LaunchScore
 import xyz.martelle.clapet.cover.CoverGeometry
 import xyz.martelle.clapet.cover.coverStatusBar
 import xyz.martelle.clapet.header.HeaderInfo
@@ -132,6 +133,8 @@ fun HomeScreen(
     apps: List<AppEntry>,
     favorites: List<AppEntry>,
     favoriteKeys: List<String>,
+    /** Orders the apps within each letter; empty before any launch. */
+    launchScores: Map<String, LaunchScore>,
     actions: AppActions,
     onOpenSettings: () -> Unit,
     /** Null until first read. */
@@ -176,7 +179,7 @@ fun HomeScreen(
     )
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val sections = remember(apps) { sectionsOf(apps) }
+    val sections = remember(apps, launchScores) { sectionsOf(apps, launchScores) }
     val headers = remember(sections) { headerIndexes(sections) }
     // The gear always leads somewhere: Clapet's settings end the list.
     val lettersWithApps = remember(sections) { sections.mapTo(HashSet()) { it.letter } + AlphabetIndex.SETTINGS }

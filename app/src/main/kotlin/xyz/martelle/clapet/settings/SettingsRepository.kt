@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import xyz.martelle.clapet.apps.LaunchScore
 import java.io.File
 import java.io.IOException
 import kotlin.math.max
@@ -78,6 +79,17 @@ class SettingsRepository(context: Context) {
         dataStore.edit { prefs ->
             val current = prefs[Keys.favorites]?.lines()?.filter { it.isNotBlank() }.orEmpty()
             prefs[Keys.favorites] = transform(current).joinToString("\n")
+        }
+    }
+
+    /** Launch scores by app key; stored as one line per app: key, score, last launch. */
+    val launchScores: Flow<Map<String, LaunchScore>> = dataStore.data
+        .map { prefs -> decodeLaunchScores(prefs[Keys.launchScores]) }
+        .distinctUntilChanged()
+
+    suspend fun updateLaunchScores(transform: (Map<String, LaunchScore>) -> Map<String, LaunchScore>) {
+        dataStore.edit { prefs ->
+            prefs[Keys.launchScores] = encodeLaunchScores(transform(decodeLaunchScores(prefs[Keys.launchScores])))
         }
     }
 
@@ -173,6 +185,7 @@ class SettingsRepository(context: Context) {
         val unlockAppCount = intPreferencesKey("unlock_app_count")
         val onboardingSeen = booleanPreferencesKey("onboarding_seen")
         val favorites = stringPreferencesKey("favorites")
+        val launchScores = stringPreferencesKey("launch_scores")
     }
 
     private companion object {
@@ -180,6 +193,18 @@ class SettingsRepository(context: Context) {
         const val MAX_WALLPAPER_SIDE = 2048
     }
 }
+
+// Keys are flattened components: never a tab. A line that does not read back is dropped.
+private fun decodeLaunchScores(stored: String?): Map<String, LaunchScore> =
+    stored?.lines().orEmpty().mapNotNull { line ->
+        val fields = line.split('\t')
+        val score = fields.getOrNull(1)?.toDoubleOrNull()
+        val last = fields.getOrNull(2)?.toLongOrNull()
+        if (fields.size == 3 && score != null && last != null) fields[0] to LaunchScore(score, last) else null
+    }.toMap()
+
+private fun encodeLaunchScores(scores: Map<String, LaunchScore>): String =
+    scores.entries.joinToString("\n") { (key, value) -> "$key\t${value.score}\t${value.lastMillis}" }
 
 private inline fun <reified T : Enum<T>> String?.toEnum(default: T): T =
     enumValues<T>().firstOrNull { it.name == this } ?: default
